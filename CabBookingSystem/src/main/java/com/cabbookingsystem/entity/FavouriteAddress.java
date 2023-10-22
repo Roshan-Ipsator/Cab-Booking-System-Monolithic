@@ -1,6 +1,9 @@
 package com.cabbookingsystem.entity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,11 +17,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @Table(name = "favourite addresses")
 public class FavouriteAddress {
-private Long addressId;
-//private User user;
-private String addressName;
-private String district;
-private String state;
-private String country;
-private String pincode;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long addressId;
+	private String addressName;
+	private String district;
+	private String state;
+	private String country;
+	private String pincode;
 }

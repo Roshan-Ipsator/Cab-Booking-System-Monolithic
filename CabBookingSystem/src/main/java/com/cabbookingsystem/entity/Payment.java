@@ -20,5 +20,8 @@ public class Payment {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long paymentId;
-//private Ride ride
+
+	private Integer amount;
+	
+	private String paymentType;
 }

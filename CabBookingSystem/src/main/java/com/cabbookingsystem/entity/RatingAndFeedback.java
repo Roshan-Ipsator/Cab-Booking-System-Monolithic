@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "rating and feedbacks")
+@Table(name = "ratings and feedbacks")
 public class RatingAndFeedback {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,6 +23,5 @@ public class RatingAndFeedback {
 
 	private Integer rating;
 	private String feedback;
-//	private Ride ride;
 
 }
