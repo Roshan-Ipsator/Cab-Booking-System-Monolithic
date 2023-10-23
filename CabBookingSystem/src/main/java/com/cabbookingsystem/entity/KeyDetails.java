@@ -17,23 +17,23 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Entity
 @Table(name = "key_details")
-public class KeyDetail {
+public class KeyDetails {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@Column(unique = true)
-	private String emailId;
+	private String email;
 	private String logInKey;
 	private LocalDateTime keyGenerationTime;
 	private Integer consecutiveAttemptCount;
 	private LocalDateTime trackingStartTime;
 
-	public KeyDetail(String emailId, String logInKey, LocalDateTime keyGenerationTime, Integer consecutiveAttemptCount,
+	public KeyDetails(String email, String logInKey, LocalDateTime keyGenerationTime, Integer consecutiveAttemptCount,
 			LocalDateTime trackingStartTime) {
 		super();
-		this.emailId = emailId;
+		this.email = email;
 		this.logInKey = logInKey;
 		this.keyGenerationTime = keyGenerationTime;
 		this.consecutiveAttemptCount = consecutiveAttemptCount;

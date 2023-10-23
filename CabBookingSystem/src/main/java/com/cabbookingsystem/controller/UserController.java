@@ -1,26 +1,25 @@
-//package com.cabbookingsystem.controller;
-//
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.web.bind.annotation.PostMapping;
-//import org.springframework.web.bind.annotation.RequestBody;
-//import org.springframework.web.bind.annotation.RequestMapping;
-//import org.springframework.web.bind.annotation.RestController;
-//
-//import com.cabbookingsystem.payload.ApiResponse;
-//import com.cabbookingsystem.record.CreateUserRecord;
-//import com.cabbookingsystem.service.UserService;
-//
-//@RestController
-//@RequestMapping("/user")
-//public class UserController {
-//
-//	@Autowired
-//	private UserService userService;
-//
-//	@PostMapping
-//	public ResponseEntity<ApiResponse> createUser(@RequestBody CreateUserRecord createUserRecord) {
-//		return userService.createUser(createUserRecord).finalResponse();
-//	}
-//
-//}
+package com.cabbookingsystem.controller;
+
+import java.security.Principal;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/user")
+public class UserController {
+	/**
+	 * API end point for getting username of current authenticated user
+	 * 
+	 * @param principal a Principal obejct
+	 * @return ResponseEntity object
+	 */
+	@GetMapping
+	public ResponseEntity<String> getUserName(Principal principal) {
+		return new ResponseEntity<>("Currently authenticated user's username: " + principal.getName(), HttpStatus.OK);
+	}
+
+}
