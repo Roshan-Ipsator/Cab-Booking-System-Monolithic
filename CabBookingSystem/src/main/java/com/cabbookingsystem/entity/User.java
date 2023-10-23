@@ -1,13 +1,17 @@
 package com.cabbookingsystem.entity;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -29,27 +33,26 @@ public class User {
 
 	private String firstName;
 	private String lastName;
+	private String gender;
 
 	@Column(unique = true, nullable = false)
 	private String email;
 
 	private String phone;
 	
-	@OneToOne(cascade = CascadeType.ALL)
-	private Customer customer;
-	
-	@OneToOne(cascade = CascadeType.ALL)
-	private Admin admin;
-	
-//	@OneToOne(cascade = CascadeType.ALL)
-//	private Driver driver;
+	private LocalDateTime userCreationTime;
 
-	public User(String firstName, String lastName, String email, String phone) {
-		super();
-		this.firstName = firstName;
-		this.lastName = lastName;
-		this.email = email;
-		this.phone = phone;
-	}
+	private LocalDateTime userUpdationTime;
+
+	@ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	private Role role;
+
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "endUser")
+	private List<Ride> bookingHistory;
+
+	@OneToMany(cascade = CascadeType.ALL)
+	private List<FavouriteAddress> favouriteAddresses;
+	
+	
 
 }

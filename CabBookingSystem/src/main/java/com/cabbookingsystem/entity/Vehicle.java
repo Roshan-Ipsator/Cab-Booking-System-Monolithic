@@ -5,7 +5,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,13 +25,16 @@ public class Vehicle {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long vehicleId;
 
-	@ManyToOne(cascade = CascadeType.ALL)
-	private VehicleModel vehicleModel;
-
 	private String registrationNumber;
 	private int capacity;
 
 	private String active;
 	private String available;
-
+	
+	@ManyToOne(cascade = CascadeType.ALL)
+	private VehicleModel vehicleModel;
+	
+	@OneToOne(cascade = CascadeType.ALL )
+    @JoinColumn(name = "driver_id")
+	private User driver;
 }

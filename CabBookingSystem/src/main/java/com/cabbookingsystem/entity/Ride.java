@@ -29,22 +29,12 @@ public class Ride {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long rideId;
-
-//	@ManyToOne
-//	@JoinColumn(name = "customer_id")
-//	private Customer customer;
-//	
-//	@ManyToOne
-//	@JoinColumn(name = "admin_id")
-//	private Admin admin;
 	
 	@ManyToOne
-	@JoinColumn(name = "user_id")
-	private User user;
-
+	private User endUser;
+	
 	@ManyToOne
-	@JoinColumn(name = "driver_id")
-	private Driver driver;
+	private User driver;
 
 	@ManyToOne
 	@JoinColumn(name = "start_location_id")
@@ -61,8 +51,5 @@ public class Ride {
 
 	@OneToOne(cascade = CascadeType.ALL)
 	private Payment payment;
-
-	@OneToMany(cascade = CascadeType.ALL)
-	private List<RatingAndFeedback> ratingAndFeedbacks;
 
 }

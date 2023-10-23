@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "vehicle models")
+@Table(name = "vehicle_models")
 public class VehicleModel {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
