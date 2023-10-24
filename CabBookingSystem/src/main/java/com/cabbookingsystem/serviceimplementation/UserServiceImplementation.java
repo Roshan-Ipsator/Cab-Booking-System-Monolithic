@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import com.cabbookingsystem.entity.Permission;
 import com.cabbookingsystem.entity.Role;
 import com.cabbookingsystem.entity.User;
+import com.cabbookingsystem.entity.Vehicle;
+import com.cabbookingsystem.entity.VehicleModel;
 import com.cabbookingsystem.enums_role_permission.PermissionEnum;
 import com.cabbookingsystem.enums_role_permission.RoleEnum;
 import com.cabbookingsystem.payload.ServiceResponse;
@@ -28,6 +30,7 @@ import com.cabbookingsystem.repository.KeyDetailsRepository;
 import com.cabbookingsystem.repository.PermissionRepository;
 import com.cabbookingsystem.repository.RoleRepository;
 import com.cabbookingsystem.repository.UserRepository;
+import com.cabbookingsystem.repository.VehicleRepository;
 import com.cabbookingsystem.security.JwtHelper;
 import com.cabbookingsystem.service.UserService;
 
@@ -59,6 +62,9 @@ public class UserServiceImplementation implements UserService {
 
 	@Autowired
 	private PermissionRepository permissionRepository;
+
+	@Autowired
+	private VehicleRepository vehicleRepository;
 
 	/**
 	 * 
@@ -456,5 +462,38 @@ public class UserServiceImplementation implements UserService {
 			permissions.add(savedPermission);
 			role.setPermissions(permissions);
 		}
+	}
+
+	@Override
+	public ServiceResponse<Vehicle> assignVehicleToDriver(Long vehicleId, Long driverId) {
+		Optional<User> userOptional = userRepository.findById(driverId);
+
+		if (userOptional.isPresent()) {
+			User existingUser = userOptional.get();
+			if (existingUser.getRole().getName().equals(RoleEnum.DRIVER.name())) {
+				Optional<Vehicle> vehicleOptional = vehicleRepository.findById(vehicleId);
+
+				if (vehicleOptional.isPresent()) {
+					Vehicle existingVehicle = vehicleOptional.get();
+					existingVehicle.setDriver(existingUser);
+
+					Vehicle assignedVehicle = vehicleRepository.save(existingVehicle);
+
+					ServiceResponse<Vehicle> response = new ServiceResponse<>(true, assignedVehicle,
+							"Vehicle successfully assigned!");
+					return response;
+				}
+				ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
+						"Invalid vehicle id: " + vehicleId + ". Please, try with a valid id!");
+				return response;
+			}
+			ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
+					"The provided id is not of a driver. Only drivers can be assigned with vehicles.");
+			return response;
+		}
+
+		ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
+				"Invalid driver id: " + driverId + ". Please, try with a valid id!");
+		return response;
 	}
 }

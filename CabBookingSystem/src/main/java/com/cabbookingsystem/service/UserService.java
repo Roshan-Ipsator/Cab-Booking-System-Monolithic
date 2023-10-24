@@ -3,6 +3,7 @@ package com.cabbookingsystem.service;
 import java.util.List;
 
 import com.cabbookingsystem.entity.User;
+import com.cabbookingsystem.entity.Vehicle;
 import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.LoginUserRecord;
 import com.cabbookingsystem.record.SetProfileDetailsRecord;
@@ -71,5 +72,7 @@ public interface UserService {
 	 * Creates a new administrative user with full access privileges.
 	 */
 	public ServiceResponse<User> createAdminWithAllAccess();
+
+	public ServiceResponse<Vehicle> assignVehicleToDriver(Long vehicleId, Long driverId);
 
 }

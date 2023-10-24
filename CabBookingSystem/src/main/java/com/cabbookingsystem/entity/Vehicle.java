@@ -1,6 +1,7 @@
 package com.cabbookingsystem.entity;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,16 +26,17 @@ public class Vehicle {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long vehicleId;
 
+	@Column(unique = true)
 	private String registrationNumber;
-	private int capacity;
+	private Integer capacity;
 
 	private String active;
 	private String available;
-	
+
 	@ManyToOne(cascade = CascadeType.ALL)
 	private VehicleModel vehicleModel;
-	
-	@OneToOne(cascade = CascadeType.ALL )
-    @JoinColumn(name = "driver_id")
+
+	@OneToOne(cascade = CascadeType.ALL)  // Unidirectional
+	@JoinColumn(name = "driver_id")
 	private User driver;
 }
