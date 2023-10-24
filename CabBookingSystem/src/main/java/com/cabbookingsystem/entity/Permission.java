@@ -25,7 +25,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "permissions")
 public class Permission {
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@Column(unique = true)

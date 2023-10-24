@@ -22,6 +22,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -45,7 +46,8 @@ public class User implements UserDetails {
 	@Column(unique = true, nullable = false)
 	private String email;
 
-	@Column(unique = true, nullable = false)
+	@Column(unique = true)
+	@Pattern(regexp = "^[0-9]{10}", message = "Mobile number length must be 10 digits [0-9]")
 	private String phone;
 
 	private LocalDateTime userCreationTime;

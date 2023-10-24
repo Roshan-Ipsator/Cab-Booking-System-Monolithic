@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,13 +26,14 @@ public class KeyDetails {
 
 	@Column(unique = true)
 	private String email;
+
 	private String logInKey;
 	private LocalDateTime keyGenerationTime;
 	private Integer consecutiveAttemptCount;
 	private LocalDateTime trackingStartTime;
 
-	public KeyDetails(String email, String logInKey, LocalDateTime keyGenerationTime, Integer consecutiveAttemptCount,
-			LocalDateTime trackingStartTime) {
+	public KeyDetails(String email, String logInKey, LocalDateTime keyGenerationTime,
+			Integer consecutiveAttemptCount, LocalDateTime trackingStartTime) {
 		super();
 		this.email = email;
 		this.logInKey = logInKey;

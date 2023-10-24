@@ -84,6 +84,7 @@ public class UserServiceImplementation implements UserService {
 			// check if user is temporarily locked or not
 			// if user is not locked temporarily
 			if (keyDetails.getTrackingStartTime().isBefore(LocalDateTime.now())) {
+
 				long currentIntervalInSeconds = ChronoUnit.SECONDS.between(keyDetails.getTrackingStartTime(),
 						LocalDateTime.now());
 
@@ -100,7 +101,7 @@ public class UserServiceImplementation implements UserService {
 					// sending email for login
 					loginEmailServiceImplementation.sendEmailWithUrl(loginUserRecord.email(),
 							"Check out this URL to verify",
-							"http://localhost:8659/open/user/final-login?loginKey=" + loginKey);
+							"http://localhost:8976/open/user/final-login?loginKey=" + loginKey);
 
 					ServiceResponse<String> response = new ServiceResponse<>(true,
 							"Email sent with login verification link to the email id: " + loginUserRecord.email()
@@ -134,7 +135,7 @@ public class UserServiceImplementation implements UserService {
 						// sending email for login
 						loginEmailServiceImplementation.sendEmailWithUrl(loginUserRecord.email(),
 								"Check out this URL to verify",
-								"http://localhost:8659/open/user/final-login?loginKey=" + loginKey);
+								"http://localhost:8976/open/user/final-login?loginKey=" + loginKey);
 
 						ServiceResponse<String> response = new ServiceResponse<>(
 								true, "Email sent with login verification link to the email id: "
@@ -144,6 +145,7 @@ public class UserServiceImplementation implements UserService {
 
 					}
 				}
+
 			} else {
 				// user is still temporarily locked
 				ServiceResponse<String> response = new ServiceResponse<>(false, null,
@@ -161,7 +163,7 @@ public class UserServiceImplementation implements UserService {
 
 		// sending email for login
 		loginEmailServiceImplementation.sendEmailWithUrl(loginUserRecord.email(), "Check out this URL to verify",
-				"http://localhost:8659/open/user/final-login?loginKey=" + logInKey);
+				"http://localhost:8976/open/user/final-login?loginKey=" + logInKey);
 
 		ServiceResponse<String> response = new ServiceResponse<>(true,
 				"Email sent with login verification link to the email id: " + loginUserRecord.email()
@@ -253,6 +255,7 @@ public class UserServiceImplementation implements UserService {
 			ServiceResponse<String> response = new ServiceResponse<>(true, "Login Successful!",
 					"User logged in successfully.");
 			return response;
+
 		}
 		ServiceResponse<String> response = new ServiceResponse<>(false, null,
 				"Invalid login key. Please try with a valid key or try logging in once again.");
@@ -301,16 +304,19 @@ public class UserServiceImplementation implements UserService {
 			if (existingUserOptionalEmail.isPresent()) {
 				Optional<User> existingUserOptionalPhone = userRepository.findByPhone(setProfileDetailsRecord.phone());
 
-				if (existingUserOptionalPhone.isEmpty()) {
+				if (existingUserOptionalPhone.isEmpty()
+						|| existingUserOptionalPhone.get().getEmail().equals(setProfileDetailsRecord.email())) {
 					User existingUser = existingUserOptionalEmail.get();
 					if (((existingUser.getRole().getName().equals(RoleEnum.USER_ALL_ACCESS.name())
-							|| existingUser.getRole().getName().equals(RoleEnum.USER_DEFAULT_ACCESS.name()))
+							|| existingUser.getRole().getName().equals(RoleEnum.USER_DEFAULT_ACCESS.name())
+							|| existingUser.getRole().getName().equals(RoleEnum.DRIVER.name()))
 							&& existingUser.getEmail().equals(username))
 							|| (existingUser.getRole().getName().equals(RoleEnum.ADMIN_ALL_ACCESS.name())
 									|| existingUser.getRole().getName().equals(RoleEnum.ADMIN_DEFAULT_ACCESS.name()))) {
 						existingUser.setFirstName(setProfileDetailsRecord.firstName());
 						existingUser.setLastName(setProfileDetailsRecord.lastName());
 						existingUser.setGender(setProfileDetailsRecord.gender());
+						existingUser.setPhone(setProfileDetailsRecord.phone());
 
 						existingUser.setUserUpdationTime(LocalDateTime.now());
 
@@ -328,7 +334,7 @@ public class UserServiceImplementation implements UserService {
 				}
 				ServiceResponse<User> response = new ServiceResponse<>(false, null,
 						"The provided phone number already exists: " + setProfileDetailsRecord.phone()
-								+ ". Please, try again with a new one!");
+								+ " with another user. Please, try again with a different phone number!");
 
 				return response;
 			}

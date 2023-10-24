@@ -14,6 +14,7 @@ import com.cabbookingsystem.record.LoginUserRecord;
 import com.cabbookingsystem.service.UserService;
 
 import jakarta.mail.MessagingException;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/open/user")
@@ -47,7 +48,7 @@ public class OpenController {
 	 * @throws MessagingException
 	 */
 	@PostMapping("/pre-final-login")
-	public ResponseEntity<ApiResponse> preFinalUserLogin(@RequestBody LoginUserRecord loginUserRecord)
+	public ResponseEntity<ApiResponse> preFinalUserLogin(@Valid @RequestBody LoginUserRecord loginUserRecord)
 			throws MessagingException {
 		ResponseEntity<ApiResponse> loginKeyConfirmationResponse = userService.preFinalUserLogin(loginUserRecord)
 				.finalResponse();

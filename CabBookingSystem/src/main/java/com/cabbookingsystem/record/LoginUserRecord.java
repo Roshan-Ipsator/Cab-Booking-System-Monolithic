@@ -1,5 +1,7 @@
 package com.cabbookingsystem.record;
 
-public record LoginUserRecord(String email) {
+import jakarta.validation.constraints.NotNull;
+
+public record LoginUserRecord(@NotNull(message = "Email id cannot be null.") String email) {
 
 }
