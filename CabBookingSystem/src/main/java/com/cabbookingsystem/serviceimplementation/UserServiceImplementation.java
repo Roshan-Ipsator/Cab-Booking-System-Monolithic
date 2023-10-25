@@ -232,13 +232,13 @@ public class UserServiceImplementation implements UserService {
 			newUser.setUserCreationTime(LocalDateTime.now());
 
 			// set the user role
-			Optional<Role> roleOptional = roleRepository.findByName(RoleEnum.USER_DEFAULT_ACCESS.name());
+			Optional<Role> roleOptional = roleRepository.findByName(RoleEnum.DRIVER.name());
 			if (roleOptional.isPresent()) {
 				Role role = roleOptional.get();
 				newUser.setRole(role);
 			} else {
 				Role newRole = new Role();
-				newRole.setName(RoleEnum.USER_DEFAULT_ACCESS.name());
+				newRole.setName(RoleEnum.DRIVER.name());
 				Role savedRole = roleRepository.save(newRole);
 
 				newUser.setRole(savedRole);

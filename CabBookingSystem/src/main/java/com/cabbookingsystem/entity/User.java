@@ -10,6 +10,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -57,9 +59,11 @@ public class User implements UserDetails {
 	@ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	private Role role;
 
-	@OneToMany(cascade = CascadeType.ALL, mappedBy = "endUser")
+	@JsonIgnore
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "passenger")
 	private List<Ride> bookingHistory;
 
+	@JsonIgnore
 	@OneToMany(cascade = CascadeType.ALL)
 	private List<FavouriteAddress> favouriteAddresses;
 

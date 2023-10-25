@@ -1,5 +1,11 @@
 package com.cabbookingsystem.service;
 
-public interface RideService {
+import com.cabbookingsystem.entity.Ride;
+import com.cabbookingsystem.entity.Vehicle;
+import com.cabbookingsystem.payload.ServiceResponse;
+import com.cabbookingsystem.record.AddVehicleRecord;
+import com.cabbookingsystem.record.BookRideRecord;
 
+public interface RideService {
+	public ServiceResponse<Ride> bookRide(BookRideRecord bookRideRecord);
 }

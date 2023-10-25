@@ -29,18 +29,18 @@ public class Ride {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long rideId;
-	
-	@ManyToOne
-	private User endUser;
-	
-	@ManyToOne
+
+	@ManyToOne(cascade = CascadeType.ALL) // Bidirectional
+	private User passenger;
+
+	@ManyToOne // Unidirectional
 	private User driver;
 
-	@ManyToOne
+	@ManyToOne // Unidirectional
 	@JoinColumn(name = "start_location_id")
 	private Location startLocation;
 
-	@ManyToOne
+	@ManyToOne // Unidirectional
 	@JoinColumn(name = "end_location_id")
 	private Location endLocation;
 
@@ -49,7 +49,7 @@ public class Ride {
 	private String status;
 	private LocalDateTime rideDateTime;
 
-	@OneToOne(cascade = CascadeType.ALL)
+	@OneToOne(cascade = CascadeType.ALL) // Unidirectional
 	private Payment payment;
 
 }
