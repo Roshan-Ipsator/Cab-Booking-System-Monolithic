@@ -38,4 +38,9 @@ public class UserController {
 		return userService.assignVehicleToDriver(vehicleId, driverId).finalResponse();
 	}
 
+	@PutMapping("ride-driver/{rideId}/{driverId}")
+	public ResponseEntity<ApiResponse> assignRideToDriver(@PathVariable Long rideId, @PathVariable Long driverId) {
+		return userService.assignRideToDriver(rideId, driverId).finalResponse();
+	}
+
 }

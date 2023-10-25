@@ -17,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import com.cabbookingsystem.entity.Permission;
+import com.cabbookingsystem.entity.Ride;
 import com.cabbookingsystem.entity.Role;
 import com.cabbookingsystem.entity.User;
 import com.cabbookingsystem.entity.Vehicle;
@@ -28,6 +29,7 @@ import com.cabbookingsystem.record.LoginUserRecord;
 import com.cabbookingsystem.record.SetProfileDetailsRecord;
 import com.cabbookingsystem.repository.KeyDetailsRepository;
 import com.cabbookingsystem.repository.PermissionRepository;
+import com.cabbookingsystem.repository.RideRepository;
 import com.cabbookingsystem.repository.RoleRepository;
 import com.cabbookingsystem.repository.UserRepository;
 import com.cabbookingsystem.repository.VehicleRepository;
@@ -65,6 +67,9 @@ public class UserServiceImplementation implements UserService {
 
 	@Autowired
 	private VehicleRepository vehicleRepository;
+
+	@Autowired
+	private RideRepository rideRepository;
 
 	/**
 	 * 
@@ -494,6 +499,43 @@ public class UserServiceImplementation implements UserService {
 
 		ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
 				"Invalid driver id: " + driverId + ". Please, try with a valid id!");
+		return response;
+	}
+
+	@Override
+	public ServiceResponse<Ride> assignRideToDriver(Long rideId, Long driverId) {
+		Optional<Ride> rideOptional = rideRepository.findById(rideId);
+
+		if (rideOptional.isPresent()) {
+			Ride existingRide = rideOptional.get();
+
+			Optional<User> driverOptional = userRepository.findById(driverId);
+
+			if (driverOptional.isPresent()) {
+				User driver = driverOptional.get();
+
+				if (driver.getRole().getName().equals(RoleEnum.DRIVER.name())) {
+					existingRide.setDriver(driver);
+					existingRide.setStatus("Accepted");
+
+					Ride updatedRide = rideRepository.save(existingRide);
+
+					ServiceResponse<Ride> response = new ServiceResponse<>(true, updatedRide,
+							"Ride assigned to driver successfully!");
+					return response;
+				}
+				ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+						"User with id: " + driverId + " is not a driver. Please, try with a valid driver id!");
+				return response;
+			}
+
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Invalid driver id: " + rideId + ". Please, try with a valid user id!");
+			return response;
+		}
+
+		ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+				"Invalid ride id: " + rideId + ". Please, try with a valid ride id!");
 		return response;
 	}
 }
