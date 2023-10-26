@@ -36,18 +36,28 @@ public class Ride {
 	@ManyToOne // Unidirectional
 	private User driver;
 
-	@ManyToOne // Unidirectional
-	@JoinColumn(name = "start_location_id")
-	private Location startLocation;
+	private String sourceName;
 
-	@ManyToOne // Unidirectional
-	@JoinColumn(name = "end_location_id")
-	private Location endLocation;
+	private Double sourceLatitude;
 
-	private double fare;
+	private Double sourceLongitude;
+
+	private String destinationName;
+
+	private Double destinationLatitude;
+
+	private Double destinationLongitude;
+
+	private Double estimatedFare;
+
+	private String paymentType; // Prepaid or Postpaid
+
 //    private RideStatus status;
 	private String status;
-	private LocalDateTime rideDateTime;
+
+	private LocalDateTime rideStartTime;
+
+	private LocalDateTime rideEndTime;
 
 	@OneToOne(cascade = CascadeType.ALL) // Unidirectional
 	private Payment payment;

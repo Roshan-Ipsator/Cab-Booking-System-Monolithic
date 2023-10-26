@@ -10,17 +10,19 @@ import java.util.UUID;
 import com.cabbookingsystem.entity.KeyDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.cabbookingsystem.entity.Permission;
 import com.cabbookingsystem.entity.Ride;
 import com.cabbookingsystem.entity.Role;
 import com.cabbookingsystem.entity.User;
-import com.cabbookingsystem.entity.Vehicle;
 import com.cabbookingsystem.entity.VehicleModel;
 import com.cabbookingsystem.enums_role_permission.PermissionEnum;
 import com.cabbookingsystem.enums_role_permission.RoleEnum;
@@ -32,11 +34,11 @@ import com.cabbookingsystem.repository.PermissionRepository;
 import com.cabbookingsystem.repository.RideRepository;
 import com.cabbookingsystem.repository.RoleRepository;
 import com.cabbookingsystem.repository.UserRepository;
-import com.cabbookingsystem.repository.VehicleRepository;
 import com.cabbookingsystem.security.JwtHelper;
 import com.cabbookingsystem.service.UserService;
 
 import jakarta.mail.MessagingException;
+import jakarta.persistence.LockModeType;
 
 @Service
 public class UserServiceImplementation implements UserService {
@@ -64,9 +66,6 @@ public class UserServiceImplementation implements UserService {
 
 	@Autowired
 	private PermissionRepository permissionRepository;
-
-	@Autowired
-	private VehicleRepository vehicleRepository;
 
 	@Autowired
 	private RideRepository rideRepository;
@@ -195,6 +194,7 @@ public class UserServiceImplementation implements UserService {
 	 * 
 	 */
 	@Override
+	@Transactional(isolation = Isolation.SERIALIZABLE)
 	public ServiceResponse<String> finalUserLogin(String loginKey) {
 		KeyDetails existingKeyDetails = keyDetailsRepository.findByLogInKey(loginKey);
 		if (existingKeyDetails != null) {
@@ -301,6 +301,7 @@ public class UserServiceImplementation implements UserService {
 	 *         the operation is successful; otherwise, an appropriate error message.
 	 */
 	@Override
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	public ServiceResponse<User> setProfileDetails(SetProfileDetailsRecord setProfileDetailsRecord) {
 
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -469,40 +470,42 @@ public class UserServiceImplementation implements UserService {
 		}
 	}
 
+//	@Override
+//	@Lock(LockModeType.PESSIMISTIC_WRITE)
+//	public ServiceResponse<Vehicle> assignVehicleToDriver(Long vehicleId, Long driverId) {
+//		Optional<User> userOptional = userRepository.findById(driverId);
+//
+//		if (userOptional.isPresent()) {
+//			User existingUser = userOptional.get();
+//			if (existingUser.getRole().getName().equals(RoleEnum.DRIVER.name())) {
+//				Optional<Vehicle> vehicleOptional = vehicleRepository.findById(vehicleId);
+//
+//				if (vehicleOptional.isPresent()) {
+//					Vehicle existingVehicle = vehicleOptional.get();
+//					existingVehicle.setDriver(existingUser);
+//
+//					Vehicle assignedVehicle = vehicleRepository.save(existingVehicle);
+//
+//					ServiceResponse<Vehicle> response = new ServiceResponse<>(true, assignedVehicle,
+//							"Vehicle successfully assigned!");
+//					return response;
+//				}
+//				ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
+//						"Invalid vehicle id: " + vehicleId + ". Please, try with a valid id!");
+//				return response;
+//			}
+//			ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
+//					"The provided id is not of a driver. Only drivers can be assigned with vehicles.");
+//			return response;
+//		}
+//
+//		ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
+//				"Invalid driver id: " + driverId + ". Please, try with a valid id!");
+//		return response;
+//	}
+
 	@Override
-	public ServiceResponse<Vehicle> assignVehicleToDriver(Long vehicleId, Long driverId) {
-		Optional<User> userOptional = userRepository.findById(driverId);
-
-		if (userOptional.isPresent()) {
-			User existingUser = userOptional.get();
-			if (existingUser.getRole().getName().equals(RoleEnum.DRIVER.name())) {
-				Optional<Vehicle> vehicleOptional = vehicleRepository.findById(vehicleId);
-
-				if (vehicleOptional.isPresent()) {
-					Vehicle existingVehicle = vehicleOptional.get();
-					existingVehicle.setDriver(existingUser);
-
-					Vehicle assignedVehicle = vehicleRepository.save(existingVehicle);
-
-					ServiceResponse<Vehicle> response = new ServiceResponse<>(true, assignedVehicle,
-							"Vehicle successfully assigned!");
-					return response;
-				}
-				ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
-						"Invalid vehicle id: " + vehicleId + ". Please, try with a valid id!");
-				return response;
-			}
-			ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
-					"The provided id is not of a driver. Only drivers can be assigned with vehicles.");
-			return response;
-		}
-
-		ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
-				"Invalid driver id: " + driverId + ". Please, try with a valid id!");
-		return response;
-	}
-
-	@Override
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	public ServiceResponse<Ride> assignRideToDriver(Long rideId, Long driverId) {
 		Optional<Ride> rideOptional = rideRepository.findById(rideId);
 

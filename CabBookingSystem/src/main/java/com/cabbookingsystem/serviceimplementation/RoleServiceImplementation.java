@@ -6,6 +6,8 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.cabbookingsystem.entity.Permission;
 import com.cabbookingsystem.entity.Role;
@@ -89,6 +91,7 @@ public class RoleServiceImplementation implements RoleService {
 	 * 
 	 */
 	@Override
+	@Transactional
 	public ServiceResponse<Role> addPermissionToRole(AddPermissionToRoleRecord addPermissionToRoleRecord) {
 
 		Optional<Role> roleOptional = roleRepository.findByName(addPermissionToRoleRecord.roleName());
@@ -171,6 +174,7 @@ public class RoleServiceImplementation implements RoleService {
 	 *         fails due to invalid input, an existing role, or an invalid email.
 	 */
 	@Override
+	@Transactional(isolation = Isolation.SERIALIZABLE)
 	public ServiceResponse<User> updateRole(UpdateRoleRecord updateRoleRecord) {
 		// find user by email id
 		Optional<User> userOptional = userRepository.findByEmail(updateRoleRecord.userEmail());

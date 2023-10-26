@@ -1,6 +1,7 @@
 package com.cabbookingsystem.entity;
 
-import jakarta.persistence.Column;
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,15 +17,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "locations")
-public class Location {
+public class RideStatus {
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long locationId;
+	private Long statusId;
 
-	@Column(unique = true)
-	private String name;
-	private double latitude;
-	private double longitude;
+	private Long rideId;
 
+	private String status;
+
+	private LocalDateTime statusUpdateTime;
 }

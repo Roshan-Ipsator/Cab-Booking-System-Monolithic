@@ -32,11 +32,11 @@ public class UserController {
 		return new ResponseEntity<>("Currently authenticated user's username: " + principal.getName(), HttpStatus.OK);
 	}
 
-	@PutMapping("/{vehicleId}/{driverId}")
-	public ResponseEntity<ApiResponse> assignVehicleToDriver(@PathVariable Long vehicleId,
-			@PathVariable Long driverId) {
-		return userService.assignVehicleToDriver(vehicleId, driverId).finalResponse();
-	}
+//	@PutMapping("/{vehicleId}/{driverId}")
+//	public ResponseEntity<ApiResponse> assignVehicleToDriver(@PathVariable Long vehicleId,
+//			@PathVariable Long driverId) {
+//		return userService.assignVehicleToDriver(vehicleId, driverId).finalResponse();
+//	}
 
 	@PutMapping("ride-driver/{rideId}/{driverId}")
 	public ResponseEntity<ApiResponse> assignRideToDriver(@PathVariable Long rideId, @PathVariable Long driverId) {

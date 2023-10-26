@@ -1,13 +1,15 @@
 package com.cabbookingsystem.entity;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -20,23 +22,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "vehicles")
-public class Vehicle {
+public class UserCredits {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long vehicleId;
+	private Long creditsId;
+	private Double currentBalance;
 
-	@Column(unique = true)
-	private String registrationNumber;
-	private Integer capacity;
-
-	private String active;
-	private String available;
-
-	@ManyToOne(cascade = CascadeType.ALL)
-	private VehicleModel vehicleModel;
-
-	@OneToOne(cascade = CascadeType.ALL)  // Unidirectional
-	@JoinColumn(name = "driver_id")
-	private User driver;
+	@OneToOne // Unidirectional
+	@JoinColumn(name = "user_id")
+	private User user;
 }

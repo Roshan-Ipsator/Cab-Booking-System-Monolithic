@@ -1,11 +1,13 @@
 package com.cabbookingsystem.entity;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,9 +25,19 @@ public class DriverAdditionalInfo {
 
 	private String availabilityStatus;
 
-	private double rating;
+	private Double averageRating;
 
-	@OneToOne(cascade = CascadeType.ALL)
+	@Column(unique = true)
+	private String vehicleRegistrationNumber;
+
+	private Double currentLatitude;
+
+	private Double currentLongitude;
+
+	@ManyToOne(cascade = CascadeType.ALL)
+	private VehicleModel vehicleModel;
+
+	@OneToOne(cascade = CascadeType.ALL) // Unidirectional
 	@JoinColumn(name = "driver_id")
 	private User driver;
 
