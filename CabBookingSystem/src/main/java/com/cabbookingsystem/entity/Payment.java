@@ -23,5 +23,5 @@ public class Payment {
 
 	private Integer amount;
 	
-	private String paymentType;
+	private String paymentMode;
 }
