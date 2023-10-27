@@ -67,7 +67,7 @@ public class User implements UserDetails {
 
 	@JsonIgnore
 	@OneToMany(cascade = CascadeType.ALL)
-	private List<FavouriteAddress> favouriteAddresses;
+	private List<FavouriteLocations> favouriteLocations;
 
 	public User(Long userId, String firstName, String lastName, String email, String gender, String phone,
 			LocalDateTime userCreationTime) {

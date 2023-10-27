@@ -49,6 +49,8 @@ public class Ride {
 //    private RideStatus status;
 	private String status;
 
+	private String rideOtp;
+
 	private LocalDateTime rideStartTime;
 
 	private LocalDateTime rideEndTime;

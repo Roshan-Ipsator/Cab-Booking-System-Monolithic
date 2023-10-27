@@ -30,6 +30,8 @@ public class DriverAdditionalInfo {
 	@Column(unique = true)
 	private String vehicleRegistrationNumber;
 
+	private String currentLocationName;
+
 	private Double currentLatitude;
 
 	private Double currentLongitude;

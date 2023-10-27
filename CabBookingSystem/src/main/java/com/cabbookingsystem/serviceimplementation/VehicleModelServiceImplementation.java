@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.cabbookingsystem.entity.VehicleModel;
 import com.cabbookingsystem.payload.ServiceResponse;
+import com.cabbookingsystem.record.AddVehicleModelRecord;
 import com.cabbookingsystem.repository.VehicleModelRepository;
 import com.cabbookingsystem.service.VehicleModelService;
 
@@ -17,15 +18,15 @@ public class VehicleModelServiceImplementation implements VehicleModelService {
 	private VehicleModelRepository vehicleModelRepository;
 
 	@Override
-	public ServiceResponse<VehicleModel> addVehicleModel(VehicleModel vehicleModel) {
+	public ServiceResponse<VehicleModel> addVehicleModel(AddVehicleModelRecord addVehicleModelRecord) {
 		Optional<VehicleModel> vehicleModelOptional = vehicleModelRepository
-				.findByModelName(vehicleModel.getModelName());
+				.findByModelName(addVehicleModelRecord.modelName());
 
 		if (vehicleModelOptional.isEmpty()) {
 			VehicleModel newVehicleModel = new VehicleModel();
-			newVehicleModel.setModelName(vehicleModel.getModelName());
-			newVehicleModel.setBrand(vehicleModel.getBrand());
-			newVehicleModel.setModelDescription(vehicleModel.getModelDescription());
+			newVehicleModel.setModelName(addVehicleModelRecord.modelName());
+			newVehicleModel.setBrand(addVehicleModelRecord.brand());
+			newVehicleModel.setModelDescription(addVehicleModelRecord.modelDescription());
 
 			VehicleModel addedVehicleModel = vehicleModelRepository.save(newVehicleModel);
 
@@ -34,7 +35,7 @@ public class VehicleModelServiceImplementation implements VehicleModelService {
 			return response;
 		}
 		ServiceResponse<VehicleModel> response = new ServiceResponse<>(false, null, "Vehicle model with name: "
-				+ vehicleModel.getModelName() + " already exists and can't be added again.");
+				+ addVehicleModelRecord.modelName() + " already exists and can't be added again.");
 		return response;
 	}
 

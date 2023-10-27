@@ -8,24 +8,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cabbookingsystem.entity.VehicleModel;
+import com.cabbookingsystem.entity.VehicleType;
 import com.cabbookingsystem.payload.ApiResponse;
-import com.cabbookingsystem.record.AddVehicleModelRecord;
-import com.cabbookingsystem.record.CreateLocationRecord;
 import com.cabbookingsystem.service.VehicleModelService;
+import com.cabbookingsystem.service.VehicleTypeService;
 
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/vehicle-model")
-public class VehicleModelController {
-
+@RequestMapping("/vehicle-type")
+public class VehicleTypeController {
 	@Autowired
-	private VehicleModelService vehicleModelService;
+	private VehicleTypeService vehicleTypeService;
 
 	@PostMapping
-	public ResponseEntity<ApiResponse> addVehicleModel(
-			@Valid @RequestBody AddVehicleModelRecord addVehicleModelRecord) {
-		return vehicleModelService.addVehicleModel(addVehicleModelRecord).finalResponse();
+	public ResponseEntity<ApiResponse> addVehicleType(@Valid @RequestBody VehicleType vehicleType) {
+		return vehicleTypeService.addVehicleType(vehicleType).finalResponse();
 	}
-
 }

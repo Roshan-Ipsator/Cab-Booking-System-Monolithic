@@ -16,13 +16,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Table(name = "favourite_addresses")
-public class FavouriteAddress {
+public class FavouriteLocations {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long addressId;
-	private String addressName;
+	private Long locationId;
+	private String locationName;
 	private String district;
 	private String state;
 	private String country;
 	private String pincode;
+	private Double latitude;
+	private Double longitude;
 }

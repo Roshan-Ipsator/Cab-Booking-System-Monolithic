@@ -23,4 +23,5 @@ public class VehicleType {
 	private String typeName;
 	private Integer seatingCapacity;
 	private Double pricePerKm;
+	private String typeDescription;
 }
