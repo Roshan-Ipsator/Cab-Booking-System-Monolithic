@@ -30,12 +30,6 @@ public class Ride {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long rideId;
 
-	@ManyToOne(cascade = CascadeType.ALL) // Bidirectional
-	private User passenger;
-
-	@ManyToOne // Unidirectional
-	private User driver;
-
 	private String sourceName;
 
 	private Double sourceLatitude;
@@ -58,6 +52,12 @@ public class Ride {
 	private LocalDateTime rideStartTime;
 
 	private LocalDateTime rideEndTime;
+
+	@ManyToOne(cascade = CascadeType.ALL) // Bidirectional
+	private User passenger;
+
+	@ManyToOne // Unidirectional
+	private User driver;
 
 	@OneToOne(cascade = CascadeType.ALL) // Unidirectional
 	private Payment payment;

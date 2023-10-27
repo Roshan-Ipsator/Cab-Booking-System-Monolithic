@@ -56,6 +56,8 @@ public class User implements UserDetails {
 
 	private LocalDateTime userUpdationTime;
 
+	private Double averageRatingAsPassenger;
+
 	@ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	private Role role;
 
