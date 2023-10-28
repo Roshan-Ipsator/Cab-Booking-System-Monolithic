@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.cabbookingsystem.entity.KeyDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.Lock;
@@ -19,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.cabbookingsystem.entity.DriverAdditionalInfo;
+import com.cabbookingsystem.entity.KeyDetails;
 import com.cabbookingsystem.entity.Permission;
 import com.cabbookingsystem.entity.Ride;
 import com.cabbookingsystem.entity.Role;
@@ -27,13 +28,17 @@ import com.cabbookingsystem.entity.VehicleModel;
 import com.cabbookingsystem.enums_role_permission.PermissionEnum;
 import com.cabbookingsystem.enums_role_permission.RoleEnum;
 import com.cabbookingsystem.payload.ServiceResponse;
+import com.cabbookingsystem.record.AssignVehicleToDriverRecord;
+import com.cabbookingsystem.record.AssignVehicleToDriverResponse;
 import com.cabbookingsystem.record.LoginUserRecord;
 import com.cabbookingsystem.record.SetProfileDetailsRecord;
+import com.cabbookingsystem.repository.DriverAdditionalInfoRepository;
 import com.cabbookingsystem.repository.KeyDetailsRepository;
 import com.cabbookingsystem.repository.PermissionRepository;
 import com.cabbookingsystem.repository.RideRepository;
 import com.cabbookingsystem.repository.RoleRepository;
 import com.cabbookingsystem.repository.UserRepository;
+import com.cabbookingsystem.repository.VehicleModelRepository;
 import com.cabbookingsystem.security.JwtHelper;
 import com.cabbookingsystem.service.UserService;
 
@@ -69,6 +74,12 @@ public class UserServiceImplementation implements UserService {
 
 	@Autowired
 	private RideRepository rideRepository;
+
+	@Autowired
+	private DriverAdditionalInfoRepository driverAdditionalInfoRepository;
+
+	@Autowired
+	private VehicleModelRepository vehicleModelRepository;
 
 	/**
 	 * 
@@ -198,6 +209,7 @@ public class UserServiceImplementation implements UserService {
 	public ServiceResponse<String> finalUserLogin(String loginKey) {
 		KeyDetails existingKeyDetails = keyDetailsRepository.findByLogInKey(loginKey);
 		if (existingKeyDetails != null) {
+
 			long noOfMinutes = existingKeyDetails.getKeyGenerationTime().until(LocalDateTime.now(), ChronoUnit.MINUTES);
 
 			if (noOfMinutes > environment.getProperty("magic.link.expiration.time.minutes", Long.class)) {
@@ -228,7 +240,6 @@ public class UserServiceImplementation implements UserService {
 						"User logged in successfully.");
 				return response;
 			}
-
 			// if user is not a registered user
 			// first save the user before generating a jwt token
 			User newUser = new User();
@@ -236,20 +247,30 @@ public class UserServiceImplementation implements UserService {
 			newUser.setEmail(existingKeyDetails.getEmail());
 			newUser.setUserCreationTime(LocalDateTime.now());
 
+			String userRoleName = RoleEnum.USER_DEFAULT_ACCESS.name();
+
 			// set the user role
-			Optional<Role> roleOptional = roleRepository.findByName(RoleEnum.USER_DEFAULT_ACCESS.name());
+			Optional<Role> roleOptional = roleRepository.findByName(userRoleName);
 			if (roleOptional.isPresent()) {
 				Role role = roleOptional.get();
 				newUser.setRole(role);
 			} else {
 				Role newRole = new Role();
-				newRole.setName(RoleEnum.USER_DEFAULT_ACCESS.name());
+				newRole.setName(userRoleName);
 				Role savedRole = roleRepository.save(newRole);
 
 				newUser.setRole(savedRole);
 			}
 
 			User savedUser = userRepository.save(newUser);
+
+			if (userRoleName.equals("DRIVER")) {
+				DriverAdditionalInfo driverAdditionalInfo = new DriverAdditionalInfo();
+				driverAdditionalInfo.setAvailabilityStatus("No Vehicle");
+				driverAdditionalInfo.setDriver(savedUser);
+
+				driverAdditionalInfoRepository.save(driverAdditionalInfo);
+			}
 
 			UserDetails userDetails = userDetailsService.loadUserByUsername(savedUser.getEmail());
 			String token = this.helper.generateToken(userDetails);
@@ -470,39 +491,55 @@ public class UserServiceImplementation implements UserService {
 		}
 	}
 
-//	@Override
-//	@Lock(LockModeType.PESSIMISTIC_WRITE)
-//	public ServiceResponse<Vehicle> assignVehicleToDriver(Long vehicleId, Long driverId) {
-//		Optional<User> userOptional = userRepository.findById(driverId);
-//
-//		if (userOptional.isPresent()) {
-//			User existingUser = userOptional.get();
-//			if (existingUser.getRole().getName().equals(RoleEnum.DRIVER.name())) {
-//				Optional<Vehicle> vehicleOptional = vehicleRepository.findById(vehicleId);
-//
-//				if (vehicleOptional.isPresent()) {
-//					Vehicle existingVehicle = vehicleOptional.get();
-//					existingVehicle.setDriver(existingUser);
-//
-//					Vehicle assignedVehicle = vehicleRepository.save(existingVehicle);
-//
-//					ServiceResponse<Vehicle> response = new ServiceResponse<>(true, assignedVehicle,
-//							"Vehicle successfully assigned!");
-//					return response;
-//				}
-//				ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
-//						"Invalid vehicle id: " + vehicleId + ". Please, try with a valid id!");
-//				return response;
-//			}
-//			ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
-//					"The provided id is not of a driver. Only drivers can be assigned with vehicles.");
-//			return response;
-//		}
-//
-//		ServiceResponse<Vehicle> response = new ServiceResponse<>(false, null,
-//				"Invalid driver id: " + driverId + ". Please, try with a valid id!");
-//		return response;
-//	}
+	@Override
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	public ServiceResponse<AssignVehicleToDriverResponse> assignVehicleToDriver(
+			AssignVehicleToDriverRecord assignVehicleToDriverRecord) {
+		Optional<User> userOptional = userRepository.findById(assignVehicleToDriverRecord.driverId());
+
+		if (userOptional.isPresent()) {
+			User existingUser = userOptional.get();
+			if (existingUser.getRole().getName().equals(RoleEnum.DRIVER.name())) {
+				Optional<VehicleModel> vehicleModelOptional = vehicleModelRepository
+						.findById(assignVehicleToDriverRecord.vehicleModelId());
+
+				if (vehicleModelOptional.isPresent()) {
+					VehicleModel existingVehicleModel = vehicleModelOptional.get();
+
+					DriverAdditionalInfo driverAdditionalInfo = driverAdditionalInfoRepository
+							.findByDriver(existingUser);
+
+					driverAdditionalInfo.setAvailabilityStatus("Vehicle Assigned");
+					driverAdditionalInfo
+							.setVehicleRegistrationNumber(assignVehicleToDriverRecord.vehicleRegistrationNumber());
+					driverAdditionalInfo.setVehicleModel(existingVehicleModel);
+
+					DriverAdditionalInfo savedDriverAdditionalInfo = driverAdditionalInfoRepository
+							.save(driverAdditionalInfo);
+
+					AssignVehicleToDriverResponse assignVehicleToDriverResponse = new AssignVehicleToDriverResponse(
+							assignVehicleToDriverRecord.driverId(), existingUser.getFirstName(),
+							savedDriverAdditionalInfo.getVehicleRegistrationNumber(),
+							existingVehicleModel.getModelName());
+
+					ServiceResponse<AssignVehicleToDriverResponse> response = new ServiceResponse<>(true,
+							assignVehicleToDriverResponse, "Vehicle successfully assigned!");
+					return response;
+				}
+				ServiceResponse<AssignVehicleToDriverResponse> response = new ServiceResponse<>(false, null,
+						"Invalid vehicle model id: " + assignVehicleToDriverRecord.vehicleModelId()
+								+ ". Please, try with a valid id!");
+				return response;
+			}
+			ServiceResponse<AssignVehicleToDriverResponse> response = new ServiceResponse<>(false, null,
+					"The provided id is not of a driver. Only drivers can be assigned with vehicles.");
+			return response;
+		}
+
+		ServiceResponse<AssignVehicleToDriverResponse> response = new ServiceResponse<>(false, null,
+				"Invalid driver id: " + assignVehicleToDriverRecord.driverId() + ". Please, try with a valid id!");
+		return response;
+	}
 
 	@Override
 	@Lock(LockModeType.PESSIMISTIC_WRITE)

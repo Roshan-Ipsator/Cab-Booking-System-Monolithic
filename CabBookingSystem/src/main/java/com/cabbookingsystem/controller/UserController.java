@@ -8,11 +8,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cabbookingsystem.payload.ApiResponse;
+import com.cabbookingsystem.record.AssignVehicleToDriverRecord;
 import com.cabbookingsystem.service.UserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/user")
@@ -32,11 +36,11 @@ public class UserController {
 		return new ResponseEntity<>("Currently authenticated user's username: " + principal.getName(), HttpStatus.OK);
 	}
 
-//	@PutMapping("/{vehicleId}/{driverId}")
-//	public ResponseEntity<ApiResponse> assignVehicleToDriver(@PathVariable Long vehicleId,
-//			@PathVariable Long driverId) {
-//		return userService.assignVehicleToDriver(vehicleId, driverId).finalResponse();
-//	}
+	@PutMapping
+	public ResponseEntity<ApiResponse> assignVehicleToDriver(
+			@Valid @RequestBody AssignVehicleToDriverRecord assignVehicleToDriverRecord) {
+		return userService.assignVehicleToDriver(assignVehicleToDriverRecord).finalResponse();
+	}
 
 	@PutMapping("ride-driver/{rideId}/{driverId}")
 	public ResponseEntity<ApiResponse> assignRideToDriver(@PathVariable Long rideId, @PathVariable Long driverId) {

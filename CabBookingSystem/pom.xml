@@ -84,6 +84,18 @@
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/org.geotools/gt-main -->
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-main</artifactId>
+			<version>29.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-geocoding-nominatim</artifactId>
+			<version>25.0</version> <!-- Use the latest version -->
+		</dependency>
 	</dependencies>
 
 	<build>

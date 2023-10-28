@@ -5,6 +5,8 @@ import java.util.List;
 import com.cabbookingsystem.entity.Ride;
 import com.cabbookingsystem.entity.User;
 import com.cabbookingsystem.payload.ServiceResponse;
+import com.cabbookingsystem.record.AssignVehicleToDriverRecord;
+import com.cabbookingsystem.record.AssignVehicleToDriverResponse;
 import com.cabbookingsystem.record.LoginUserRecord;
 import com.cabbookingsystem.record.SetProfileDetailsRecord;
 
@@ -73,7 +75,7 @@ public interface UserService {
 	 */
 	public ServiceResponse<User> createAdminWithAllAccess();
 
-//	public ServiceResponse<Vehicle> assignVehicleToDriver(Long vehicleId, Long driverId);
+	public ServiceResponse<AssignVehicleToDriverResponse> assignVehicleToDriver(AssignVehicleToDriverRecord assignVehicleToDriverRecord);
 
 	public ServiceResponse<Ride> assignRideToDriver(Long rideId, Long driverId);
 
