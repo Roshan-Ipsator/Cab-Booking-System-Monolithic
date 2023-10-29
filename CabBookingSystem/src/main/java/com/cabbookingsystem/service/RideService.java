@@ -6,5 +6,5 @@ import com.cabbookingsystem.record.AddVehicleRecord;
 import com.cabbookingsystem.record.BookRideRecord;
 
 public interface RideService {
-//	public ServiceResponse<Ride> bookRide(BookRideRecord bookRideRecord);
+	public ServiceResponse<Ride> bookRide(BookRideRecord bookRideRecord);
 }

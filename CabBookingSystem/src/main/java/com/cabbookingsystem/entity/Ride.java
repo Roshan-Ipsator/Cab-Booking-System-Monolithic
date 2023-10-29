@@ -1,18 +1,16 @@
 package com.cabbookingsystem.entity;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -51,9 +49,14 @@ public class Ride {
 
 	private String rideOtp;
 
+//	@Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$", message = "Invalid date-time format. Correct Format is: yyyy-MM-dd HH:mm:ss")
 	private LocalDateTime rideStartTime;
 
+//	@Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$", message = "Invalid date-time format. Correct Format is: yyyy-MM-dd HH:mm:ss")
 	private LocalDateTime rideEndTime;
+
+	@ManyToOne // Unidirectional
+	private VehicleType vehicleType;
 
 	@ManyToOne(cascade = CascadeType.ALL) // Bidirectional
 	private User passenger;

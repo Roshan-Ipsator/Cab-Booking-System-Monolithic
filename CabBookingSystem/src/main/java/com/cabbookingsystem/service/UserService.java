@@ -57,6 +57,8 @@ public interface UserService {
 	 */
 	public ServiceResponse<List<User>> getAllUsers();
 
+//	public ServiceResponse<User> setPhoneNumber(String phone);
+
 	/**
 	 * Sets and updates the profile details of a user based on the information
 	 * provided in the {@code SetProfileDetailsRecord}.
@@ -75,7 +77,8 @@ public interface UserService {
 	 */
 	public ServiceResponse<User> createAdminWithAllAccess();
 
-	public ServiceResponse<AssignVehicleToDriverResponse> assignVehicleToDriver(AssignVehicleToDriverRecord assignVehicleToDriverRecord);
+	public ServiceResponse<AssignVehicleToDriverResponse> assignVehicleToDriver(
+			AssignVehicleToDriverRecord assignVehicleToDriverRecord);
 
 	public ServiceResponse<Ride> assignRideToDriver(Long rideId, Long driverId);
 

@@ -21,8 +21,8 @@ public class RideController {
 	@Autowired
 	private RideService rideService;
 
-//	@PostMapping
-//	public ResponseEntity<ApiResponse> bookRide(@Valid @RequestBody BookRideRecord bookRideRecord) {
-//		return rideService.bookRide(bookRideRecord).finalResponse();
-//	}
+	@PostMapping
+	public ResponseEntity<ApiResponse> bookRide(@Valid @RequestBody BookRideRecord bookRideRecord) {
+		return rideService.bookRide(bookRideRecord).finalResponse();
+	}
 }

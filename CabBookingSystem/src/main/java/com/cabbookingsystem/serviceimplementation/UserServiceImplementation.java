@@ -24,6 +24,7 @@ import com.cabbookingsystem.entity.Permission;
 import com.cabbookingsystem.entity.Ride;
 import com.cabbookingsystem.entity.Role;
 import com.cabbookingsystem.entity.User;
+import com.cabbookingsystem.entity.UserCredits;
 import com.cabbookingsystem.entity.VehicleModel;
 import com.cabbookingsystem.enums_role_permission.PermissionEnum;
 import com.cabbookingsystem.enums_role_permission.RoleEnum;
@@ -37,6 +38,7 @@ import com.cabbookingsystem.repository.KeyDetailsRepository;
 import com.cabbookingsystem.repository.PermissionRepository;
 import com.cabbookingsystem.repository.RideRepository;
 import com.cabbookingsystem.repository.RoleRepository;
+import com.cabbookingsystem.repository.UserCreditsRepository;
 import com.cabbookingsystem.repository.UserRepository;
 import com.cabbookingsystem.repository.VehicleModelRepository;
 import com.cabbookingsystem.security.JwtHelper;
@@ -80,6 +82,9 @@ public class UserServiceImplementation implements UserService {
 
 	@Autowired
 	private VehicleModelRepository vehicleModelRepository;
+
+	@Autowired
+	private UserCreditsRepository userCreditsRepository;
 
 	/**
 	 * 
@@ -247,7 +252,7 @@ public class UserServiceImplementation implements UserService {
 			newUser.setEmail(existingKeyDetails.getEmail());
 			newUser.setUserCreationTime(LocalDateTime.now());
 
-			String userRoleName = RoleEnum.USER_DEFAULT_ACCESS.name();
+			String userRoleName = RoleEnum.DRIVER.name();
 
 			// set the user role
 			Optional<Role> roleOptional = roleRepository.findByName(userRoleName);
@@ -263,6 +268,12 @@ public class UserServiceImplementation implements UserService {
 			}
 
 			User savedUser = userRepository.save(newUser);
+
+			UserCredits userCredits = new UserCredits();
+			userCredits.setCurrentBalance((double) 0);
+			userCredits.setUser(savedUser);
+
+			userCreditsRepository.save(userCredits);
 
 			if (userRoleName.equals("DRIVER")) {
 				DriverAdditionalInfo driverAdditionalInfo = new DriverAdditionalInfo();
@@ -578,4 +589,22 @@ public class UserServiceImplementation implements UserService {
 				"Invalid ride id: " + rideId + ". Please, try with a valid ride id!");
 		return response;
 	}
+
+//	@Override
+//	public ServiceResponse<User> setPhoneNumber(String phone) {
+//		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//
+//		if (authentication != null && authentication.isAuthenticated()) {
+//			String username = authentication.getName();
+//			Optional<User> userOptional = userRepository.findByEmail(username);
+//			User currentLoggedInUser = userOptional.get();
+//			
+//			
+//		} else {
+//			// No user is authenticated
+//			ServiceResponse<User> response = new ServiceResponse<>(false, null,
+//					"Currently no user is authenticated. Please, login first!");
+//			return response;
+//		}
+//	}
 }
