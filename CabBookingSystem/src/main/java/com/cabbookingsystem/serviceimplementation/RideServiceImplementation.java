@@ -2,6 +2,8 @@ package com.cabbookingsystem.serviceimplementation;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,12 +11,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.cabbookingsystem.entity.DriverAdditionalInfo;
 import com.cabbookingsystem.entity.Ride;
 import com.cabbookingsystem.entity.User;
 import com.cabbookingsystem.entity.UserCredits;
 import com.cabbookingsystem.entity.VehicleType;
 import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.BookRideRecord;
+import com.cabbookingsystem.repository.DriverAdditionalInfoRepository;
 import com.cabbookingsystem.repository.RideRepository;
 import com.cabbookingsystem.repository.UserCreditsRepository;
 import com.cabbookingsystem.repository.UserRepository;
@@ -36,6 +40,9 @@ public class RideServiceImplementation implements RideService {
 
 	@Autowired
 	private UserCreditsRepository userCreditsRepository;
+
+	@Autowired
+	private DriverAdditionalInfoRepository driverAdditionalInfoRepository;
 
 	@Override
 	public ServiceResponse<Ride> bookRide(BookRideRecord bookRideRecord) {
@@ -94,7 +101,7 @@ public class RideServiceImplementation implements RideService {
 				LocalDateTime rideStartTime = LocalDateTime.parse(bookRideRecord.rideStartTime(), formatter);
 
 				newRide.setRideStartTime(rideStartTime);
-				
+
 				newRide.setVehicleType(selectedVehicleType);
 				newRide.setPassenger(currentLoggedInUser);
 
@@ -115,6 +122,36 @@ public class RideServiceImplementation implements RideService {
 					"Currently no user is authenticated. Please, login first!");
 			return response;
 		}
+	}
+
+	@Override
+	public ServiceResponse<List<User>> sendRideRequestToDrivers(Long rideId) {
+		Optional<Ride> rideOptional = rideRepository.findById(rideId);
+		if (rideOptional.isPresent()) {
+			Ride existingRide = rideOptional.get();
+
+			List<DriverAdditionalInfo> driverAdditionalInfos = driverAdditionalInfoRepository
+					.findTopDriversInfoWithinRadius(existingRide.getSourceLongitude(), existingRide.getSourceLatitude(),
+							5000, existingRide.getVehicleType().getTypeName());
+
+			if (driverAdditionalInfos.size() != 0) {
+				List<User> selectedDrivers = new ArrayList<>();
+
+				for (DriverAdditionalInfo driverAdditionalInfo : driverAdditionalInfos) {
+					selectedDrivers.add(driverAdditionalInfo.getDriver());
+				}
+
+				ServiceResponse<List<User>> response = new ServiceResponse<>(true, selectedDrivers,
+						"List of selected drivers returned successfully!");
+				return response;
+			}
+			ServiceResponse<List<User>> response = new ServiceResponse<>(false, null,
+					"No driver is available, now. Please, try after some time");
+			return response;
+		}
+		ServiceResponse<List<User>> response = new ServiceResponse<>(false, null,
+				"Invalid ride id: " + rideId + ". Please, try again with a valid id!");
+		return response;
 	}
 
 }

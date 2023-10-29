@@ -27,6 +27,8 @@ public class DriverAdditionalInfo {
 
 	private Double averageRating;
 
+	private Double rideAcceptanceRate;
+
 	@Column(unique = true)
 	private String vehicleRegistrationNumber;
 

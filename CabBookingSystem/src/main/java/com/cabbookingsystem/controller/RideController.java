@@ -2,6 +2,8 @@ package com.cabbookingsystem.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,5 +26,10 @@ public class RideController {
 	@PostMapping
 	public ResponseEntity<ApiResponse> bookRide(@Valid @RequestBody BookRideRecord bookRideRecord) {
 		return rideService.bookRide(bookRideRecord).finalResponse();
+	}
+
+	@GetMapping("/{rideId}")
+	public ResponseEntity<ApiResponse> sendRideRequestToDrivers(@PathVariable Long rideId) {
+		return rideService.sendRideRequestToDrivers(rideId).finalResponse();
 	}
 }
