@@ -12,14 +12,18 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.cabbookingsystem.entity.DriverAdditionalInfo;
+import com.cabbookingsystem.entity.DriverReceivedRides;
 import com.cabbookingsystem.entity.Ride;
+import com.cabbookingsystem.entity.RideStatus;
 import com.cabbookingsystem.entity.User;
 import com.cabbookingsystem.entity.UserCredits;
 import com.cabbookingsystem.entity.VehicleType;
 import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.BookRideRecord;
 import com.cabbookingsystem.repository.DriverAdditionalInfoRepository;
+import com.cabbookingsystem.repository.DriverReceivedRidesRepository;
 import com.cabbookingsystem.repository.RideRepository;
+import com.cabbookingsystem.repository.RideStatusRepository;
 import com.cabbookingsystem.repository.UserCreditsRepository;
 import com.cabbookingsystem.repository.UserRepository;
 import com.cabbookingsystem.repository.VehicleTypeRepository;
@@ -43,6 +47,12 @@ public class RideServiceImplementation implements RideService {
 
 	@Autowired
 	private DriverAdditionalInfoRepository driverAdditionalInfoRepository;
+
+	@Autowired
+	private DriverReceivedRidesRepository driverReceivedRidesRepository;
+
+	@Autowired
+	private RideStatusRepository rideStatusRepository;
 
 	@Override
 	public ServiceResponse<Ride> bookRide(BookRideRecord bookRideRecord) {
@@ -107,6 +117,14 @@ public class RideServiceImplementation implements RideService {
 
 				Ride bookedRide = rideRepository.save(newRide);
 
+				// Database Triger to save the ride status details to the RideStatus table
+				// simultaneously
+				RideStatus rideStatus = new RideStatus();
+				rideStatus.setRideId(bookedRide.getRideId());
+				rideStatus.setStatus("Booked");
+				rideStatus.setStatusUpdateTime(LocalDateTime.now());
+				rideStatusRepository.save(rideStatus);
+
 				ServiceResponse<Ride> response = new ServiceResponse<>(true, bookedRide, "Ride booked successfully!");
 				return response;
 
@@ -139,6 +157,14 @@ public class RideServiceImplementation implements RideService {
 
 				for (DriverAdditionalInfo driverAdditionalInfo : driverAdditionalInfos) {
 					selectedDrivers.add(driverAdditionalInfo.getDriver());
+
+					DriverReceivedRides driverReceivedRides = new DriverReceivedRides();
+					driverReceivedRides.setResponseStatus("No Response");
+					driverReceivedRides.setReceivedAt(LocalDateTime.now());
+					driverReceivedRides.setDriver(driverAdditionalInfo.getDriver());
+					driverReceivedRides.setRide(existingRide);
+
+					driverReceivedRidesRepository.save(driverReceivedRides);
 				}
 
 				ServiceResponse<List<User>> response = new ServiceResponse<>(true, selectedDrivers,
