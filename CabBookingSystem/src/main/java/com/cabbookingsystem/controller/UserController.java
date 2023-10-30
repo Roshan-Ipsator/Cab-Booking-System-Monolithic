@@ -57,4 +57,9 @@ public class UserController {
 		return userService.acceptRideRequest(rideId).finalResponse();
 	}
 
+	@PutMapping("pick-up-passenger/{rideId}/{otp}")
+	public ResponseEntity<ApiResponse> pickUpPassenger(@PathVariable Long rideId, @PathVariable String otp) {
+		return userService.pickUpPassenger(rideId, otp).finalResponse();
+	}
+
 }

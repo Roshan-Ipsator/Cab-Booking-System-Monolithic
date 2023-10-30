@@ -87,4 +87,6 @@ public interface UserService {
 
 	public ServiceResponse<Ride> acceptRideRequest(Long rideId);
 
+	public ServiceResponse<Ride> pickUpPassenger(Long rideId, String otp);
+
 }

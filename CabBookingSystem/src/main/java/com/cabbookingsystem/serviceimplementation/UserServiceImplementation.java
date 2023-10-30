@@ -725,6 +725,67 @@ public class UserServiceImplementation implements UserService {
 		}
 	}
 
+	@Override
+	public ServiceResponse<Ride> pickUpPassenger(Long rideId, String otp) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+
+			Optional<Ride> rideOptional = rideRepository.findById(rideId);
+
+			if (rideOptional.isPresent()) {
+				Ride currentRide = rideOptional.get();
+
+				if (currentLoggedInUser.getRole().getName().equalsIgnoreCase("Driver")) {
+					if (currentRide.getDriver().getUserId() == currentLoggedInUser.getUserId()) {
+						if (currentRide.getStatus().equalsIgnoreCase("Accepted")) {
+							if (currentRide.getRideOtp().equals(otp)) {
+								currentRide.setStatus("Picked Up");
+								Ride updatedRide = rideRepository.save(currentRide);
+
+								// Database Triger to save the ride status details to the RideStatus table
+								// simultaneously
+								RideStatus rideStatus = new RideStatus();
+								rideStatus.setRideId(rideId);
+								rideStatus.setStatus("Picked Up");
+								rideStatus.setStatusUpdateTime(LocalDateTime.now());
+								rideStatusRepository.save(rideStatus);
+
+								ServiceResponse<Ride> response = new ServiceResponse<>(true, updatedRide,
+										"User successfully picked up!");
+								return response;
+							}
+							ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+									"The provided OTP doesn't match with the ride OTP.");
+							return response;
+						}
+						ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+								"Either the ride has been canceled or passengers have already been picked up!");
+						return response;
+					}
+					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+							"Current logged in driver is not assigned with the current ride. Only the assigned drivers can pick up passengers for the specific rides.");
+					return response;
+				}
+				ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+						"The current logged in user is not a driver. Only drivers can pick up passengers.");
+				return response;
+			}
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null, "Invalid ride id: " + rideId);
+			return response;
+		}
+
+		else {
+			// No user is authenticated
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Currently no user is authenticated. Please, login first!");
+			return response;
+		}
+	}
+
 //	@Override
 //	public ServiceResponse<User> setPhoneNumber(String phone) {
 //		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
