@@ -12,4 +12,5 @@ public interface RideService {
 	public ServiceResponse<Ride> bookRide(BookRideRecord bookRideRecord);
 
 	public ServiceResponse<List<User>> sendRideRequestToDrivers(Long rideId);
+	
 }

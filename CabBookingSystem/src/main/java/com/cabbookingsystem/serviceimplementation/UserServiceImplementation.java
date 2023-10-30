@@ -19,9 +19,11 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cabbookingsystem.entity.DriverAdditionalInfo;
+import com.cabbookingsystem.entity.DriverReceivedRides;
 import com.cabbookingsystem.entity.KeyDetails;
 import com.cabbookingsystem.entity.Permission;
 import com.cabbookingsystem.entity.Ride;
+import com.cabbookingsystem.entity.RideStatus;
 import com.cabbookingsystem.entity.Role;
 import com.cabbookingsystem.entity.User;
 import com.cabbookingsystem.entity.UserCredits;
@@ -34,9 +36,11 @@ import com.cabbookingsystem.record.AssignVehicleToDriverResponse;
 import com.cabbookingsystem.record.LoginUserRecord;
 import com.cabbookingsystem.record.SetProfileDetailsRecord;
 import com.cabbookingsystem.repository.DriverAdditionalInfoRepository;
+import com.cabbookingsystem.repository.DriverReceivedRidesRepository;
 import com.cabbookingsystem.repository.KeyDetailsRepository;
 import com.cabbookingsystem.repository.PermissionRepository;
 import com.cabbookingsystem.repository.RideRepository;
+import com.cabbookingsystem.repository.RideStatusRepository;
 import com.cabbookingsystem.repository.RoleRepository;
 import com.cabbookingsystem.repository.UserCreditsRepository;
 import com.cabbookingsystem.repository.UserRepository;
@@ -86,6 +90,12 @@ public class UserServiceImplementation implements UserService {
 
 	@Autowired
 	private UserCreditsRepository userCreditsRepository;
+
+	@Autowired
+	private DriverReceivedRidesRepository driverReceivedRidesRepository;
+
+	@Autowired
+	private RideStatusRepository rideStatusRepository;
 
 	/**
 	 * 
@@ -626,6 +636,80 @@ public class UserServiceImplementation implements UserService {
 		} else {
 			// No user is authenticated
 			ServiceResponse<DriverAdditionalInfo> response = new ServiceResponse<>(false, null,
+					"Currently no user is authenticated. Please, login first!");
+			return response;
+		}
+	}
+
+	@Override
+	public ServiceResponse<Ride> acceptRideRequest(Long rideId) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+
+			DriverAdditionalInfo driverAdditionalInfo = driverAdditionalInfoRepository
+					.findByDriver(currentLoggedInUser);
+
+			if (driverAdditionalInfo != null) {
+				if (driverAdditionalInfo.getAvailabilityStatus().equals("Available")) {
+					DriverReceivedRides receivedRide = driverReceivedRidesRepository
+							.findReceivedRidesByDriverAndRideIds(rideId, rideId);
+
+					if (receivedRide != null) {
+						String receivedRideResponseStatus = receivedRide.getResponseStatus();
+
+						if (receivedRideResponseStatus.equalsIgnoreCase("No Response")) {
+							receivedRide.setResponseStatus("Accepted");
+							driverReceivedRidesRepository.save(receivedRide);
+
+							Ride associatedRide = receivedRide.getRide();
+
+							associatedRide.setDriver(currentLoggedInUser);
+
+							String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
+
+							associatedRide.setRideOtp(otp);
+
+							associatedRide.setStatus("Accepted");
+
+							Ride updatedRide = rideRepository.save(associatedRide);
+
+							// Database Triger to save the ride status details to the RideStatus table
+							// simultaneously
+							RideStatus rideStatus = new RideStatus();
+							rideStatus.setRideId(associatedRide.getRideId());
+							rideStatus.setStatus("Accepted");
+							rideStatus.setStatusUpdateTime(LocalDateTime.now());
+							rideStatusRepository.save(rideStatus);
+
+							ServiceResponse<Ride> response = new ServiceResponse<>(true, updatedRide,
+									"Driver accepted the ride successfully!");
+							return response;
+
+						}
+						ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+								"Driver cannot accept the ride request. The request has already been accepted or timed out or canceled.");
+						return response;
+					}
+
+					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+							"The provided ride request is not sent to the driver. Drivers can respond to only the received ride requests.");
+					return response;
+				}
+				ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+						"The current driver is not available. The driver status should be available to accept a ride.");
+				return response;
+			}
+
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"The current logged in user is not a driver. Only drivers can accept ride requests.");
+			return response;
+		} else {
+			// No user is authenticated
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
 					"Currently no user is authenticated. Please, login first!");
 			return response;
 		}

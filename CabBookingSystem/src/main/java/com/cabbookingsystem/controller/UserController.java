@@ -52,4 +52,9 @@ public class UserController {
 		return userService.setDriverStatusToAvailable(currentLocationName).finalResponse();
 	}
 
+	@PutMapping("driver-accept-ride/{rideId}")
+	public ResponseEntity<ApiResponse> acceptRide(@PathVariable Long rideId) {
+		return userService.acceptRideRequest(rideId).finalResponse();
+	}
+
 }

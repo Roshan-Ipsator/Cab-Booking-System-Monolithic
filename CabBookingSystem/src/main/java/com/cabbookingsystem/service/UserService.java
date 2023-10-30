@@ -85,4 +85,6 @@ public interface UserService {
 
 	public ServiceResponse<DriverAdditionalInfo> setDriverStatusToAvailable(String currentLocation);
 
+	public ServiceResponse<Ride> acceptRideRequest(Long rideId);
+
 }
