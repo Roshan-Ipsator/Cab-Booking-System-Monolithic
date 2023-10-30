@@ -47,4 +47,9 @@ public class UserController {
 		return userService.assignRideToDriver(rideId, driverId).finalResponse();
 	}
 
+	@PutMapping("driver-status-available/{currentLocationName}")
+	public ResponseEntity<ApiResponse> setDriverStatusToAvailable(@PathVariable String currentLocationName) {
+		return userService.setDriverStatusToAvailable(currentLocationName).finalResponse();
+	}
+
 }

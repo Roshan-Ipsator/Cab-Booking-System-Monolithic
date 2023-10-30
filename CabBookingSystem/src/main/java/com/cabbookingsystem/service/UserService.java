@@ -2,6 +2,7 @@ package com.cabbookingsystem.service;
 
 import java.util.List;
 
+import com.cabbookingsystem.entity.DriverAdditionalInfo;
 import com.cabbookingsystem.entity.Ride;
 import com.cabbookingsystem.entity.User;
 import com.cabbookingsystem.payload.ServiceResponse;
@@ -81,5 +82,7 @@ public interface UserService {
 			AssignVehicleToDriverRecord assignVehicleToDriverRecord);
 
 	public ServiceResponse<Ride> assignRideToDriver(Long rideId, Long driverId);
+
+	public ServiceResponse<DriverAdditionalInfo> setDriverStatusToAvailable(String currentLocation);
 
 }

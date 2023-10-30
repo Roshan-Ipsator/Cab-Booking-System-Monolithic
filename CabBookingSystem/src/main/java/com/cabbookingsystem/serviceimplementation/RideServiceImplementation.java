@@ -150,7 +150,7 @@ public class RideServiceImplementation implements RideService {
 
 			List<DriverAdditionalInfo> driverAdditionalInfos = driverAdditionalInfoRepository
 					.findTopDriversInfoWithinRadius(existingRide.getSourceLongitude(), existingRide.getSourceLatitude(),
-							5000, existingRide.getVehicleType().getTypeName());
+							13000000, existingRide.getVehicleType().getTypeName());
 
 			if (driverAdditionalInfos.size() != 0) {
 				List<User> selectedDrivers = new ArrayList<>();

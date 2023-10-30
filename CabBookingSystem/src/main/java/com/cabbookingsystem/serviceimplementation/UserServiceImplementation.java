@@ -43,6 +43,7 @@ import com.cabbookingsystem.repository.UserRepository;
 import com.cabbookingsystem.repository.VehicleModelRepository;
 import com.cabbookingsystem.security.JwtHelper;
 import com.cabbookingsystem.service.UserService;
+import com.cabbookingsystem.util.LocationUtils;
 
 import jakarta.mail.MessagingException;
 import jakarta.persistence.LockModeType;
@@ -588,6 +589,46 @@ public class UserServiceImplementation implements UserService {
 		ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
 				"Invalid ride id: " + rideId + ". Please, try with a valid ride id!");
 		return response;
+	}
+
+	@Override
+	public ServiceResponse<DriverAdditionalInfo> setDriverStatusToAvailable(String currentLocation) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+
+			DriverAdditionalInfo driverAdditionalInfo = driverAdditionalInfoRepository
+					.findByDriver(currentLoggedInUser);
+
+			if (driverAdditionalInfo != null) {
+				driverAdditionalInfo.setAvailabilityStatus("Available");
+				driverAdditionalInfo.setCurrentLocationName(currentLocation);
+
+				double[] locationCoordinates = LocationUtils.generateLocationCoordinates();
+				driverAdditionalInfo.setCurrentLatitude(locationCoordinates[0]);
+				driverAdditionalInfo.setCurrentLongitude(locationCoordinates[1]);
+
+				DriverAdditionalInfo updatedDriverAdditionalInfo = driverAdditionalInfoRepository
+						.save(driverAdditionalInfo);
+
+				ServiceResponse<DriverAdditionalInfo> response = new ServiceResponse<>(true,
+						updatedDriverAdditionalInfo, "User status updated successfully!");
+				return response;
+			}
+
+			ServiceResponse<DriverAdditionalInfo> response = new ServiceResponse<>(false, null,
+					"The current logged in user is not a driver. Only drivers can set available status.");
+			return response;
+
+		} else {
+			// No user is authenticated
+			ServiceResponse<DriverAdditionalInfo> response = new ServiceResponse<>(false, null,
+					"Currently no user is authenticated. Please, login first!");
+			return response;
+		}
 	}
 
 //	@Override
