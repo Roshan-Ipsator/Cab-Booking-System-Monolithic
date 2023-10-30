@@ -19,14 +19,13 @@ public class JwtHelper {
 
 	public static final long JWT_TOKEN_VALIDITY = 5 * 60 * 60;
 
-	// private String secret =
-	// "afafasfafafasfasfasfafacasdasfasxASFACASDFACASDFASFASFDAFASFASDAADSCSDFADCVSGCFVADXCcadwavfsfarvf";
+	private String secret = "afafasfafafasfasfasfafacasdasfasxASFACASDFACASDFASFASFDAFASFASDAADSCSDFADCVSGCFVADXCcadwavfsfarvf";
 
-	// Generating a secure HS512 key
-	byte[] keyBytes = Keys.secretKeyFor(SignatureAlgorithm.HS512).getEncoded();
-
-	// Encoding the key as a Base64 string
-	private final String secret = Base64.getEncoder().encodeToString(keyBytes);
+//	// Generating a secure HS512 key
+//	byte[] keyBytes = Keys.secretKeyFor(SignatureAlgorithm.HS512).getEncoded();
+//
+//	// Encoding the key as a Base64 string
+//	private final String secret = Base64.getEncoder().encodeToString(keyBytes);
 
 	/**
 	 * A method to retrieve username from a jwt token

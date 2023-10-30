@@ -656,7 +656,7 @@ public class UserServiceImplementation implements UserService {
 			if (driverAdditionalInfo != null) {
 				if (driverAdditionalInfo.getAvailabilityStatus().equals("Available")) {
 					DriverReceivedRides receivedRide = driverReceivedRidesRepository
-							.findReceivedRidesByDriverAndRideIds(rideId, rideId);
+							.findReceivedRidesByDriverAndRideIds(currentLoggedInUser.getUserId(), rideId);
 
 					if (receivedRide != null) {
 						String receivedRideResponseStatus = receivedRide.getResponseStatus();
@@ -676,6 +676,16 @@ public class UserServiceImplementation implements UserService {
 							associatedRide.setStatus("Accepted");
 
 							Ride updatedRide = rideRepository.save(associatedRide);
+
+							List<DriverReceivedRides> receivedRidesByRide = driverReceivedRidesRepository
+									.findByRide(updatedRide);
+
+							for (DriverReceivedRides driverReceivedRide : receivedRidesByRide) {
+								if (driverReceivedRide.getDriver().getUserId() != currentLoggedInUser.getUserId()) {
+									driverReceivedRide.setResponseStatus("Accepted By Other");
+									driverReceivedRidesRepository.save(driverReceivedRide);
+								}
+							}
 
 							// Database Triger to save the ride status details to the RideStatus table
 							// simultaneously
