@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.cabbookingsystem.payload.ApiResponse;
 import com.cabbookingsystem.record.AssignVehicleToDriverRecord;
+import com.cabbookingsystem.record.ChangeDestinationRecord;
 import com.cabbookingsystem.service.UserService;
 
 import jakarta.validation.Valid;
@@ -60,6 +61,12 @@ public class UserController {
 	@PutMapping("pick-up-passenger/{rideId}/{otp}")
 	public ResponseEntity<ApiResponse> pickUpPassenger(@PathVariable Long rideId, @PathVariable String otp) {
 		return userService.pickUpPassenger(rideId, otp).finalResponse();
+	}
+
+	@PutMapping("change-destination")
+	public ResponseEntity<ApiResponse> changeDestinationDuringRide(
+			@RequestBody ChangeDestinationRecord changeDestinationRecord) {
+		return userService.changeDestinationDuringRide(changeDestinationRecord).finalResponse();
 	}
 
 }

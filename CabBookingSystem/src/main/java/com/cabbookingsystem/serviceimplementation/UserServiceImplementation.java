@@ -33,6 +33,7 @@ import com.cabbookingsystem.enums_role_permission.RoleEnum;
 import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.AssignVehicleToDriverRecord;
 import com.cabbookingsystem.record.AssignVehicleToDriverResponse;
+import com.cabbookingsystem.record.ChangeDestinationRecord;
 import com.cabbookingsystem.record.LoginUserRecord;
 import com.cabbookingsystem.record.SetProfileDetailsRecord;
 import com.cabbookingsystem.repository.DriverAdditionalInfoRepository;
@@ -775,6 +776,98 @@ public class UserServiceImplementation implements UserService {
 				return response;
 			}
 			ServiceResponse<Ride> response = new ServiceResponse<>(false, null, "Invalid ride id: " + rideId);
+			return response;
+		}
+
+		else {
+			// No user is authenticated
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Currently no user is authenticated. Please, login first!");
+			return response;
+		}
+	}
+
+	@Override
+	public ServiceResponse<Ride> changeDestinationDuringRide(ChangeDestinationRecord changeDestinationRecord) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+
+			Optional<Ride> rideOptional = rideRepository.findById(changeDestinationRecord.rideId());
+
+			if (rideOptional.isPresent()) {
+				Ride ride = rideOptional.get();
+
+				if (ride.getPassenger().getUserId() == currentLoggedInUser.getUserId()) {
+					if (ride.getStatus().equalsIgnoreCase("In Progress")) {
+						if (changeDestinationRecord.newDestinationName().equalsIgnoreCase(ride.getDestinationName())) {
+							ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+									"The old destination and new destination are same.");
+							return response;
+						}
+
+						double[] newDestCoordinates = LocationUtils.generateLocationCoordinates();
+						Double newDestLatitude = newDestCoordinates[0];
+						Double newDestLongitude = newDestCoordinates[1];
+
+						double distanceCurrToNewDest = LocationUtils.calculateDistance(
+								changeDestinationRecord.currentLatitude(), changeDestinationRecord.currentLongitude(),
+								newDestLatitude, newDestLongitude);
+
+						double distanceSourceToCurr = LocationUtils.calculateDistance(ride.getSourceLatitude(),
+								ride.getSourceLongitude(), changeDestinationRecord.currentLatitude(),
+								changeDestinationRecord.currentLongitude());
+
+						double pricePerKm = ride.getVehicleType().getPricePerKm();
+
+						double totalFare = (distanceSourceToCurr * pricePerKm) + (distanceCurrToNewDest * pricePerKm);
+
+						String paymentType = ride.getPaymentType();
+
+						if (paymentType.equalsIgnoreCase("Prepaid")) {
+							if (userCreditsRepository.findByUserUserId(currentLoggedInUser.getUserId())
+									.getCurrentBalance() < totalFare) {
+								ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+										"Not sufficient balance in user credits. Either first add more amount to the user credits or change the payment type to Postpaid.");
+								return response;
+							}
+						}
+
+						// Database Triger to save the ride status details to the RideStatus table
+						// simultaneously
+						RideStatus rideStatus = new RideStatus();
+						rideStatus.setRideId(changeDestinationRecord.rideId());
+						rideStatus.setStatus("Destination Changed By Passenger");
+						rideStatus.setStatusUpdateTime(LocalDateTime.now());
+						rideStatus.setSourceName(ride.getSourceName());
+						rideStatus.setDestName(changeDestinationRecord.newDestinationName());
+						rideStatusRepository.save(rideStatus);
+
+						ride.setDestinationName(changeDestinationRecord.newDestinationName());
+						ride.setDestinationLatitude(newDestLatitude);
+						ride.setDestinationLongitude(newDestLongitude);
+						ride.setEstimatedFare(totalFare);
+
+						Ride updatedRide = rideRepository.save(ride);
+
+						ServiceResponse<Ride> response = new ServiceResponse<>(true, updatedRide,
+								"Ride destination updated successfully!");
+						return response;
+					}
+
+					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+							"The provided ride is not in progress.");
+					return response;
+				}
+				ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+						"The provided ride is not booked by the current logged in user.");
+				return response;
+			}
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Invalid ride id: " + changeDestinationRecord.rideId());
 			return response;
 		}
 

@@ -8,6 +8,7 @@ import com.cabbookingsystem.entity.User;
 import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.AssignVehicleToDriverRecord;
 import com.cabbookingsystem.record.AssignVehicleToDriverResponse;
+import com.cabbookingsystem.record.ChangeDestinationRecord;
 import com.cabbookingsystem.record.LoginUserRecord;
 import com.cabbookingsystem.record.SetProfileDetailsRecord;
 
@@ -88,5 +89,7 @@ public interface UserService {
 	public ServiceResponse<Ride> acceptRideRequest(Long rideId);
 
 	public ServiceResponse<Ride> pickUpPassenger(Long rideId, String otp);
+
+	public ServiceResponse<Ride> changeDestinationDuringRide(ChangeDestinationRecord changeDestinationRecord);
 
 }

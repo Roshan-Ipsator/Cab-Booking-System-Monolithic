@@ -28,4 +28,8 @@ public class RideStatus {
 	private String status;
 
 	private LocalDateTime statusUpdateTime;
+
+	private String sourceName;
+
+	private String destName;
 }
