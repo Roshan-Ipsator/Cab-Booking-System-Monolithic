@@ -30,6 +30,6 @@ public class VehicleModel {
 
 	private String modelDescription;
 
-	@ManyToOne // Unidirectional
-	private VehicleType vehicleType;
+//	@ManyToOne // Unidirectional
+//	private VehicleType vehicleType;
 }

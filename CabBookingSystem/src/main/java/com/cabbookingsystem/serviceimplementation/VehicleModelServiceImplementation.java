@@ -45,38 +45,4 @@ public class VehicleModelServiceImplementation implements VehicleModelService {
 		return response;
 	}
 
-	@Override
-	public ServiceResponse<VehicleModel> assignVehicleTypeToVehicleModel(
-			AssignVehicleTypeToVehicleModelRecord assignVehicleTypeToVehicleModelRecord) {
-		Optional<VehicleType> vehicleTypeOptional = vehicleTypeRepository
-				.findByTypeName(assignVehicleTypeToVehicleModelRecord.typeName().toLowerCase());
-
-		if (vehicleTypeOptional.isPresent()) {
-			VehicleType vehicleType = vehicleTypeOptional.get();
-
-			Optional<VehicleModel> vehicleModelOptional = vehicleModelRepository
-					.findByModelName(assignVehicleTypeToVehicleModelRecord.modelName().toLowerCase());
-
-			if (vehicleModelOptional.isPresent()) {
-				VehicleModel vehicleModel = vehicleModelOptional.get();
-
-				vehicleModel.setVehicleType(vehicleType);
-
-				VehicleModel updatedVehicleModel = vehicleModelRepository.save(vehicleModel);
-
-				ServiceResponse<VehicleModel> response = new ServiceResponse<>(true, updatedVehicleModel,
-						"Vehicle type assigned to vehicle model successfully!");
-				return response;
-			}
-
-			ServiceResponse<VehicleModel> response = new ServiceResponse<>(false, null,
-					"Vehicle model with name: " + assignVehicleTypeToVehicleModelRecord.modelName() + " not found.");
-			return response;
-		}
-
-		ServiceResponse<VehicleModel> response = new ServiceResponse<>(false, null,
-				"Vehicle type with name: " + assignVehicleTypeToVehicleModelRecord.typeName() + " not found.");
-		return response;
-	}
-
 }

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cabbookingsystem.payload.ApiResponse;
@@ -63,10 +64,16 @@ public class UserController {
 		return userService.pickUpPassenger(rideId, otp).finalResponse();
 	}
 
-	@PutMapping("change-destination")
+	@PutMapping("/change-destination")
 	public ResponseEntity<ApiResponse> changeDestinationDuringRide(
 			@RequestBody ChangeDestinationRecord changeDestinationRecord) {
 		return userService.changeDestinationDuringRide(changeDestinationRecord).finalResponse();
+	}
+
+	@GetMapping("/get-all-vehicleType-fare")
+	public ResponseEntity<ApiResponse> getVehicleTypeWithFareForRide(@RequestParam String sourceName,
+			@RequestParam String destinationName, @RequestParam String rideStartTime) {
+		return userService.getVehicleTypeWithFareForRide(sourceName, destinationName, rideStartTime).finalResponse();
 	}
 
 }

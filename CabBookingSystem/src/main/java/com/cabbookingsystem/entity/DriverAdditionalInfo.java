@@ -38,8 +38,11 @@ public class DriverAdditionalInfo {
 
 	private Double currentLongitude;
 
-	@ManyToOne(cascade = CascadeType.ALL)
+	@ManyToOne // Unidirectional
 	private VehicleModel vehicleModel;
+
+	@ManyToOne // Unidirectional
+	private VehicleType vehicleType;
 
 	@OneToOne(cascade = CascadeType.ALL) // Unidirectional
 	@JoinColumn(name = "driver_id")

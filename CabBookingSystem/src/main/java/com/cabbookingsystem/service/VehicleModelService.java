@@ -7,7 +7,4 @@ import com.cabbookingsystem.record.AssignVehicleTypeToVehicleModelRecord;
 
 public interface VehicleModelService {
 	public ServiceResponse<VehicleModel> addVehicleModel(AddVehicleModelRecord addVehicleModelRecord);
-
-	public ServiceResponse<VehicleModel> assignVehicleTypeToVehicleModel(
-			AssignVehicleTypeToVehicleModelRecord assignVehicleTypeToVehicleModelRecord);
 }

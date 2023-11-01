@@ -14,7 +14,7 @@ public interface DriverAdditionalInfoRepository extends JpaRepository<DriverAddi
 	DriverAdditionalInfo findByDriver(User driver);
 
 	@Query("SELECT dinfo FROM DriverAdditionalInfo dinfo " + "WHERE dinfo.availabilityStatus = 'Available' "
-			+ "AND dinfo.vehicleModel.vehicleType.typeName = :vehicleTypeName "
+			+ "AND dinfo.vehicleType.typeName = :vehicleTypeName "
 			+ "AND ST_Distance_Sphere(POINT(dinfo.currentLongitude, dinfo.currentLatitude), "
 			+ "POINT(:sourceLongitude, :sourceLatitude)) <= :maxDistance "
 			+ "ORDER BY ST_Distance_Sphere(POINT(dinfo.currentLongitude, dinfo.currentLatitude), "

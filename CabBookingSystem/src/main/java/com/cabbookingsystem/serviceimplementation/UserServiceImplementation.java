@@ -28,6 +28,7 @@ import com.cabbookingsystem.entity.Role;
 import com.cabbookingsystem.entity.User;
 import com.cabbookingsystem.entity.UserCredits;
 import com.cabbookingsystem.entity.VehicleModel;
+import com.cabbookingsystem.entity.VehicleType;
 import com.cabbookingsystem.enums_role_permission.PermissionEnum;
 import com.cabbookingsystem.enums_role_permission.RoleEnum;
 import com.cabbookingsystem.payload.ServiceResponse;
@@ -36,6 +37,7 @@ import com.cabbookingsystem.record.AssignVehicleToDriverResponse;
 import com.cabbookingsystem.record.ChangeDestinationRecord;
 import com.cabbookingsystem.record.LoginUserRecord;
 import com.cabbookingsystem.record.SetProfileDetailsRecord;
+import com.cabbookingsystem.record.VehicleTypeFareRecord;
 import com.cabbookingsystem.repository.DriverAdditionalInfoRepository;
 import com.cabbookingsystem.repository.DriverReceivedRidesRepository;
 import com.cabbookingsystem.repository.KeyDetailsRepository;
@@ -46,6 +48,7 @@ import com.cabbookingsystem.repository.RoleRepository;
 import com.cabbookingsystem.repository.UserCreditsRepository;
 import com.cabbookingsystem.repository.UserRepository;
 import com.cabbookingsystem.repository.VehicleModelRepository;
+import com.cabbookingsystem.repository.VehicleTypeRepository;
 import com.cabbookingsystem.security.JwtHelper;
 import com.cabbookingsystem.service.UserService;
 import com.cabbookingsystem.util.LocationUtils;
@@ -97,6 +100,9 @@ public class UserServiceImplementation implements UserService {
 
 	@Autowired
 	private RideStatusRepository rideStatusRepository;
+
+	@Autowired
+	private VehicleTypeRepository vehicleTypeRepository;
 
 	/**
 	 * 
@@ -523,36 +529,49 @@ public class UserServiceImplementation implements UserService {
 		if (userOptional.isPresent()) {
 			User existingUser = userOptional.get();
 			if (existingUser.getRole().getName().equals(RoleEnum.DRIVER.name())) {
-				Optional<VehicleModel> vehicleModelOptional = vehicleModelRepository
-						.findById(assignVehicleToDriverRecord.vehicleModelId());
 
-				if (vehicleModelOptional.isPresent()) {
-					VehicleModel existingVehicleModel = vehicleModelOptional.get();
+				Optional<VehicleType> vehicleTypeOptional = vehicleTypeRepository
+						.findById(assignVehicleToDriverRecord.vehicleTypeId());
+				if (vehicleTypeOptional.isPresent()) {
+					VehicleType vehicleType = vehicleTypeOptional.get();
 
-					DriverAdditionalInfo driverAdditionalInfo = driverAdditionalInfoRepository
-							.findByDriver(existingUser);
+					Optional<VehicleModel> vehicleModelOptional = vehicleModelRepository
+							.findById(assignVehicleToDriverRecord.vehicleModelId());
 
-					driverAdditionalInfo.setAvailabilityStatus("Vehicle Assigned");
-					driverAdditionalInfo
-							.setVehicleRegistrationNumber(assignVehicleToDriverRecord.vehicleRegistrationNumber());
-					driverAdditionalInfo.setVehicleModel(existingVehicleModel);
+					if (vehicleModelOptional.isPresent()) {
+						VehicleModel existingVehicleModel = vehicleModelOptional.get();
 
-					DriverAdditionalInfo savedDriverAdditionalInfo = driverAdditionalInfoRepository
-							.save(driverAdditionalInfo);
+						DriverAdditionalInfo driverAdditionalInfo = driverAdditionalInfoRepository
+								.findByDriver(existingUser);
 
-					AssignVehicleToDriverResponse assignVehicleToDriverResponse = new AssignVehicleToDriverResponse(
-							assignVehicleToDriverRecord.driverId(), existingUser.getFirstName(),
-							savedDriverAdditionalInfo.getVehicleRegistrationNumber(),
-							existingVehicleModel.getModelName());
+						driverAdditionalInfo.setAvailabilityStatus("Vehicle Assigned");
+						driverAdditionalInfo
+								.setVehicleRegistrationNumber(assignVehicleToDriverRecord.vehicleRegistrationNumber());
+						driverAdditionalInfo.setVehicleModel(existingVehicleModel);
 
-					ServiceResponse<AssignVehicleToDriverResponse> response = new ServiceResponse<>(true,
-							assignVehicleToDriverResponse, "Vehicle successfully assigned!");
+						driverAdditionalInfo.setVehicleType(vehicleType);
+
+						DriverAdditionalInfo savedDriverAdditionalInfo = driverAdditionalInfoRepository
+								.save(driverAdditionalInfo);
+
+						AssignVehicleToDriverResponse assignVehicleToDriverResponse = new AssignVehicleToDriverResponse(
+								assignVehicleToDriverRecord.driverId(), existingUser.getFirstName(),
+								savedDriverAdditionalInfo.getVehicleRegistrationNumber(),
+								existingVehicleModel.getModelName(), vehicleType.getTypeName());
+
+						ServiceResponse<AssignVehicleToDriverResponse> response = new ServiceResponse<>(true,
+								assignVehicleToDriverResponse, "Vehicle successfully assigned!");
+						return response;
+					}
+					ServiceResponse<AssignVehicleToDriverResponse> response = new ServiceResponse<>(false, null,
+							"Invalid vehicle model id: " + assignVehicleToDriverRecord.vehicleModelId()
+									+ ". Please, try with a valid id!");
 					return response;
 				}
 				ServiceResponse<AssignVehicleToDriverResponse> response = new ServiceResponse<>(false, null,
-						"Invalid vehicle model id: " + assignVehicleToDriverRecord.vehicleModelId()
-								+ ". Please, try with a valid id!");
+						"Invalid vehicle type id: " + assignVehicleToDriverRecord.vehicleTypeId());
 				return response;
+
 			}
 			ServiceResponse<AssignVehicleToDriverResponse> response = new ServiceResponse<>(false, null,
 					"The provided id is not of a driver. Only drivers can be assigned with vehicles.");
@@ -643,6 +662,7 @@ public class UserServiceImplementation implements UserService {
 	}
 
 	@Override
+	@Transactional(isolation = Isolation.SERIALIZABLE)
 	public ServiceResponse<Ride> acceptRideRequest(Long rideId) {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -877,6 +897,44 @@ public class UserServiceImplementation implements UserService {
 					"Currently no user is authenticated. Please, login first!");
 			return response;
 		}
+	}
+
+	@Override
+	public ServiceResponse<List<VehicleTypeFareRecord>> getVehicleTypeWithFareForRide(String sourceName,
+			String destinationName, String rideStartTime) {
+		double[] sourceCoordinates = LocationUtils.generateLocationCoordinates();
+		double sourceLatitude = sourceCoordinates[0];
+		double sourceLongitude = sourceCoordinates[1];
+
+		double[] destinationCoordinates = LocationUtils.generateLocationCoordinates();
+		double destinationLatitude = destinationCoordinates[0];
+		double destinationLongitude = destinationCoordinates[1];
+
+		double distance = LocationUtils.calculateDistance(sourceLatitude, sourceLongitude, destinationLatitude,
+				destinationLongitude);
+
+		List<VehicleType> vehicleTypes = vehicleTypeRepository.findAll();
+
+		if (vehicleTypes.isEmpty()) {
+			ServiceResponse<List<VehicleTypeFareRecord>> response = new ServiceResponse<>(false, null,
+					"No vehicle type found in the system.");
+			return response;
+		}
+
+		List<VehicleTypeFareRecord> vehicleTypeFareRecords = new ArrayList<>();
+
+		for (VehicleType vehicleType : vehicleTypes) {
+			double estimatedFare = vehicleType.getPricePerKm() * distance;
+
+			VehicleTypeFareRecord vehicleTypeFareRecord = new VehicleTypeFareRecord(vehicleType.getTypeName(),
+					estimatedFare);
+
+			vehicleTypeFareRecords.add(vehicleTypeFareRecord);
+		}
+
+		ServiceResponse<List<VehicleTypeFareRecord>> response = new ServiceResponse<>(true, vehicleTypeFareRecords,
+				"All available vehicle types with estimated fares for this ride returned successfully.");
+		return response;
 	}
 
 //	@Override

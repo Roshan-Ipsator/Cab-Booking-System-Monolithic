@@ -30,11 +30,4 @@ public class VehicleModelController {
 		return vehicleModelService.addVehicleModel(addVehicleModelRecord).finalResponse();
 	}
 
-	@PutMapping
-	public ResponseEntity<ApiResponse> assignVehicleTypeToVehicleModel(
-			@Valid @RequestBody AssignVehicleTypeToVehicleModelRecord assignVehicleTypeToVehicleModelRecord) {
-		return vehicleModelService.assignVehicleTypeToVehicleModel(assignVehicleTypeToVehicleModelRecord)
-				.finalResponse();
-	}
-
 }

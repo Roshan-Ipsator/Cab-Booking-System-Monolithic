@@ -1,5 +1,6 @@
 package com.cabbookingsystem.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.cabbookingsystem.entity.DriverAdditionalInfo;
@@ -11,6 +12,7 @@ import com.cabbookingsystem.record.AssignVehicleToDriverResponse;
 import com.cabbookingsystem.record.ChangeDestinationRecord;
 import com.cabbookingsystem.record.LoginUserRecord;
 import com.cabbookingsystem.record.SetProfileDetailsRecord;
+import com.cabbookingsystem.record.VehicleTypeFareRecord;
 
 import jakarta.mail.MessagingException;
 
@@ -91,5 +93,8 @@ public interface UserService {
 	public ServiceResponse<Ride> pickUpPassenger(Long rideId, String otp);
 
 	public ServiceResponse<Ride> changeDestinationDuringRide(ChangeDestinationRecord changeDestinationRecord);
+
+	public ServiceResponse<List<VehicleTypeFareRecord>> getVehicleTypeWithFareForRide(String sourceName,
+			String destinationName, String rideStartTime);
 
 }
