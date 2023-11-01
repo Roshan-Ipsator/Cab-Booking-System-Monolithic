@@ -76,4 +76,9 @@ public class UserController {
 		return userService.getVehicleTypeWithFareForRide(sourceName, destinationName, rideStartTime).finalResponse();
 	}
 
+	@PutMapping("driver-reject-ride/{rideId}")
+	public ResponseEntity<ApiResponse> rejectRideRequest(@PathVariable Long rideId) {
+		return userService.rejectRideRequest(rideId).finalResponse();
+	}
+
 }

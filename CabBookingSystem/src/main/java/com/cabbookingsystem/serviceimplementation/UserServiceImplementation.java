@@ -270,7 +270,7 @@ public class UserServiceImplementation implements UserService {
 			newUser.setEmail(existingKeyDetails.getEmail());
 			newUser.setUserCreationTime(LocalDateTime.now());
 
-			String userRoleName = RoleEnum.DRIVER.name();
+			String userRoleName = RoleEnum.USER_DEFAULT_ACCESS.name();
 
 			// set the user role
 			Optional<Role> roleOptional = roleRepository.findByName(userRoleName);
@@ -702,7 +702,8 @@ public class UserServiceImplementation implements UserService {
 									.findByRide(updatedRide);
 
 							for (DriverReceivedRides driverReceivedRide : receivedRidesByRide) {
-								if (driverReceivedRide.getDriver().getUserId() != currentLoggedInUser.getUserId()) {
+								if ((driverReceivedRide.getDriver().getUserId() != currentLoggedInUser.getUserId())
+										&& driverReceivedRide.getResponseStatus().equalsIgnoreCase("No Response")) {
 									driverReceivedRide.setResponseStatus("Accepted By Other");
 									driverReceivedRidesRepository.save(driverReceivedRide);
 								}
@@ -714,6 +715,8 @@ public class UserServiceImplementation implements UserService {
 							rideStatus.setRideId(associatedRide.getRideId());
 							rideStatus.setStatus("Accepted");
 							rideStatus.setStatusUpdateTime(LocalDateTime.now());
+							rideStatus.setSourceName(associatedRide.getSourceName());
+							rideStatus.setSourceName(associatedRide.getDestinationName());
 							rideStatusRepository.save(rideStatus);
 
 							ServiceResponse<Ride> response = new ServiceResponse<>(true, updatedRide,
@@ -935,6 +938,88 @@ public class UserServiceImplementation implements UserService {
 		ServiceResponse<List<VehicleTypeFareRecord>> response = new ServiceResponse<>(true, vehicleTypeFareRecords,
 				"All available vehicle types with estimated fares for this ride returned successfully.");
 		return response;
+	}
+
+	@Override
+	public ServiceResponse<Ride> rejectRideRequest(Long rideId) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+			
+			DriverAdditionalInfo driverAdditionalInfo = driverAdditionalInfoRepository
+					.findByDriver(currentLoggedInUser);
+			
+			if (driverAdditionalInfo != null) {
+				DriverReceivedRides receivedRide = driverReceivedRidesRepository
+						.findReceivedRidesByDriverAndRideIds(currentLoggedInUser.getUserId(), rideId);
+				
+				if (receivedRide != null) {
+					String receivedRideResponseStatus = receivedRide.getResponseStatus();
+
+					if (receivedRideResponseStatus.equalsIgnoreCase("No Response")) {
+						receivedRide.setResponseStatus("Rejected");
+						driverReceivedRidesRepository.save(receivedRide);
+						
+						List<DriverReceivedRides> receivedRidesByRide = driverReceivedRidesRepository
+								.findByRideRideId(rideId);
+						
+						boolean flag = false;
+						
+						for (DriverReceivedRides driverReceivedRide : receivedRidesByRide) {
+							if (!driverReceivedRide.getResponseStatus().equalsIgnoreCase("Rejected")) {
+								flag = true;
+								break;
+							}
+						}
+						
+						if(flag==false) {
+							Ride associatedRide = receivedRide.getRide();
+
+							associatedRide.setStatus("Driver Unavailable");
+
+							Ride updatedRide = rideRepository.save(associatedRide);
+							
+							// Database Triger to save the ride status details to the RideStatus table
+							// simultaneously
+							RideStatus rideStatus = new RideStatus();
+							rideStatus.setRideId(updatedRide.getRideId());
+							rideStatus.setStatus("Driver Unavailable");
+							rideStatus.setStatusUpdateTime(LocalDateTime.now());
+							rideStatus.setSourceName(associatedRide.getSourceName());
+							rideStatus.setSourceName(associatedRide.getDestinationName());
+							rideStatusRepository.save(rideStatus);
+						}
+
+						ServiceResponse<Ride> response = new ServiceResponse<>(true, receivedRide.getRide(),
+								"Driver accepted the ride successfully!");
+						return response;
+
+					}
+					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+							"Driver cannot reject the ride request. The request has response status: "+receivedRideResponseStatus);
+					return response;
+				}
+
+				ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+						"The provided ride request is not sent to the driver. Drivers can respond to only the received ride requests.");
+				return response;
+				
+			}
+			
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"The current logged in user is not a driver. Only drivers can reject ride requests.");
+			return response;
+			
+			
+		} else {
+			// No user is authenticated
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Currently no user is authenticated. Please, login first!");
+			return response;
+		}
 	}
 
 //	@Override

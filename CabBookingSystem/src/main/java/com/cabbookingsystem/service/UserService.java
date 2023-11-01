@@ -97,4 +97,6 @@ public interface UserService {
 	public ServiceResponse<List<VehicleTypeFareRecord>> getVehicleTypeWithFareForRide(String sourceName,
 			String destinationName, String rideStartTime);
 
+	public ServiceResponse<Ride> rejectRideRequest(Long rideId);
+
 }

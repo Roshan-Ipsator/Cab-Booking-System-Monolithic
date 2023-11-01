@@ -14,6 +14,8 @@ public interface DriverReceivedRidesRepository extends JpaRepository<DriverRecei
 	@Query("SELECT rr FROM DriverReceivedRides rr " + "WHERE rr.driver.userId = :driverId "
 			+ "AND rr.ride.rideId = :rideId")
 	DriverReceivedRides findReceivedRidesByDriverAndRideIds(Long driverId, Long rideId);
-	
+
 	List<DriverReceivedRides> findByRide(Ride ride);
+
+	List<DriverReceivedRides> findByRideRideId(Long rideId);
 }

@@ -19,7 +19,7 @@ public interface DriverAdditionalInfoRepository extends JpaRepository<DriverAddi
 			+ "POINT(:sourceLongitude, :sourceLatitude)) <= :maxDistance "
 			+ "ORDER BY ST_Distance_Sphere(POINT(dinfo.currentLongitude, dinfo.currentLatitude), "
 			+ "POINT(:sourceLongitude, :sourceLatitude)), "
-			+ "0.65 * COALESCE(dinfo.averageRating, 0) + 0.35 * COALESCE(dinfo.rideAcceptanceRate, 0) DESC")
+			+ "0.65 * COALESCE(dinfo.averageRating, 0) + 0.35 * COALESCE(dinfo.rideAcceptanceRate, 0) DESC LIMIT 10")
 	List<DriverAdditionalInfo> findTopDriversInfoWithinRadius(double sourceLongitude, double sourceLatitude,
 			double maxDistance, String vehicleTypeName);
 }

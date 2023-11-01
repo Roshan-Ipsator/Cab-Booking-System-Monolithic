@@ -123,6 +123,8 @@ public class RideServiceImplementation implements RideService {
 				rideStatus.setRideId(bookedRide.getRideId());
 				rideStatus.setStatus("Booked");
 				rideStatus.setStatusUpdateTime(LocalDateTime.now());
+				rideStatus.setSourceName(bookedRide.getSourceName());
+				rideStatus.setSourceName(bookedRide.getDestinationName());
 				rideStatusRepository.save(rideStatus);
 
 				ServiceResponse<Ride> response = new ServiceResponse<>(true, bookedRide, "Ride booked successfully!");
@@ -150,7 +152,7 @@ public class RideServiceImplementation implements RideService {
 
 			List<DriverAdditionalInfo> driverAdditionalInfos = driverAdditionalInfoRepository
 					.findTopDriversInfoWithinRadius(existingRide.getSourceLongitude(), existingRide.getSourceLatitude(),
-							13000000, existingRide.getVehicleType().getTypeName());
+							16000000, existingRide.getVehicleType().getTypeName());
 
 			if (driverAdditionalInfos.size() != 0) {
 				List<User> selectedDrivers = new ArrayList<>();
