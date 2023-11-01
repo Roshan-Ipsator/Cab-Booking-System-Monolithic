@@ -1,5 +1,6 @@
 package com.cabbookingsystem.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,4 +19,10 @@ public interface DriverReceivedRidesRepository extends JpaRepository<DriverRecei
 	List<DriverReceivedRides> findByRide(Ride ride);
 
 	List<DriverReceivedRides> findByRideRideId(Long rideId);
+
+	List<DriverReceivedRides> findByResponseStatusAndReceivedAtBefore(String status, LocalDateTime time);
+
+	@Query("SELECT COUNT(rr) FROM DriverReceivedRides rr " + "WHERE rr.ride.rideId = :rideId "
+			+ "AND rr.responseStatus NOT IN ('Timed Out', 'Rejected')")
+	Long countReceivedRidesWithStatus(Long rideId);
 }

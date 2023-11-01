@@ -150,32 +150,42 @@ public class RideServiceImplementation implements RideService {
 		if (rideOptional.isPresent()) {
 			Ride existingRide = rideOptional.get();
 
-			List<DriverAdditionalInfo> driverAdditionalInfos = driverAdditionalInfoRepository
-					.findTopDriversInfoWithinRadius(existingRide.getSourceLongitude(), existingRide.getSourceLatitude(),
-							16000000, existingRide.getVehicleType().getTypeName());
+			List<DriverReceivedRides> driverReceivedRides = driverReceivedRidesRepository.findByRide(existingRide);
 
-			if (driverAdditionalInfos.size() != 0) {
-				List<User> selectedDrivers = new ArrayList<>();
+			if (driverReceivedRides.isEmpty()) {
+				List<DriverAdditionalInfo> driverAdditionalInfos = driverAdditionalInfoRepository
+						.findTopDriversInfoWithinRadius(existingRide.getSourceLongitude(),
+								existingRide.getSourceLatitude(), 16000000,
+								existingRide.getVehicleType().getTypeName());
 
-				for (DriverAdditionalInfo driverAdditionalInfo : driverAdditionalInfos) {
-					selectedDrivers.add(driverAdditionalInfo.getDriver());
+				if (driverAdditionalInfos.size() != 0) {
+					List<User> selectedDrivers = new ArrayList<>();
 
-					DriverReceivedRides driverReceivedRides = new DriverReceivedRides();
-					driverReceivedRides.setResponseStatus("No Response");
-					driverReceivedRides.setReceivedAt(LocalDateTime.now());
-					driverReceivedRides.setDriver(driverAdditionalInfo.getDriver());
-					driverReceivedRides.setRide(existingRide);
+					for (DriverAdditionalInfo driverAdditionalInfo : driverAdditionalInfos) {
+						selectedDrivers.add(driverAdditionalInfo.getDriver());
 
-					driverReceivedRidesRepository.save(driverReceivedRides);
+						DriverReceivedRides newDriverReceivedRides = new DriverReceivedRides();
+						newDriverReceivedRides.setResponseStatus("No Response");
+						newDriverReceivedRides.setReceivedAt(LocalDateTime.now());
+						newDriverReceivedRides.setDriver(driverAdditionalInfo.getDriver());
+						newDriverReceivedRides.setRide(existingRide);
+
+						driverReceivedRidesRepository.save(newDriverReceivedRides);
+					}
+
+					ServiceResponse<List<User>> response = new ServiceResponse<>(true, selectedDrivers,
+							"List of selected drivers returned successfully!");
+					return response;
 				}
-
-				ServiceResponse<List<User>> response = new ServiceResponse<>(true, selectedDrivers,
-						"List of selected drivers returned successfully!");
+				ServiceResponse<List<User>> response = new ServiceResponse<>(false, null,
+						"No driver is available, now. Please, try after some time");
 				return response;
 			}
+
 			ServiceResponse<List<User>> response = new ServiceResponse<>(false, null,
-					"No driver is available, now. Please, try after some time");
+					"The same ride request cannot be sent to near by drivers multiple times.");
 			return response;
+
 		}
 		ServiceResponse<List<User>> response = new ServiceResponse<>(false, null,
 				"Invalid ride id: " + rideId + ". Please, try again with a valid id!");

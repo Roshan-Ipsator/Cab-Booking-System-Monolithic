@@ -725,7 +725,8 @@ public class UserServiceImplementation implements UserService {
 
 						}
 						ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
-								"Driver cannot accept the ride request. The request has already been accepted or timed out or canceled.");
+								"Driver cannot accept the ride request. The request has status: "
+										+ receivedRideResponseStatus);
 						return response;
 					}
 
@@ -948,40 +949,32 @@ public class UserServiceImplementation implements UserService {
 			String username = authentication.getName();
 			Optional<User> userOptional = userRepository.findByEmail(username);
 			User currentLoggedInUser = userOptional.get();
-			
+
 			DriverAdditionalInfo driverAdditionalInfo = driverAdditionalInfoRepository
 					.findByDriver(currentLoggedInUser);
-			
+
 			if (driverAdditionalInfo != null) {
+				System.out.println("Before");
 				DriverReceivedRides receivedRide = driverReceivedRidesRepository
 						.findReceivedRidesByDriverAndRideIds(currentLoggedInUser.getUserId(), rideId);
-				
+
+				System.out.println("After");
+
 				if (receivedRide != null) {
 					String receivedRideResponseStatus = receivedRide.getResponseStatus();
 
 					if (receivedRideResponseStatus.equalsIgnoreCase("No Response")) {
 						receivedRide.setResponseStatus("Rejected");
 						driverReceivedRidesRepository.save(receivedRide);
-						
-						List<DriverReceivedRides> receivedRidesByRide = driverReceivedRidesRepository
-								.findByRideRideId(rideId);
-						
-						boolean flag = false;
-						
-						for (DriverReceivedRides driverReceivedRide : receivedRidesByRide) {
-							if (!driverReceivedRide.getResponseStatus().equalsIgnoreCase("Rejected")) {
-								flag = true;
-								break;
-							}
-						}
-						
-						if(flag==false) {
+
+						if (driverReceivedRidesRepository
+								.countReceivedRidesWithStatus(receivedRide.getRide().getRideId()) == 0) {
 							Ride associatedRide = receivedRide.getRide();
 
 							associatedRide.setStatus("Driver Unavailable");
 
 							Ride updatedRide = rideRepository.save(associatedRide);
-							
+
 							// Database Triger to save the ride status details to the RideStatus table
 							// simultaneously
 							RideStatus rideStatus = new RideStatus();
@@ -999,21 +992,21 @@ public class UserServiceImplementation implements UserService {
 
 					}
 					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
-							"Driver cannot reject the ride request. The request has response status: "+receivedRideResponseStatus);
+							"Driver cannot reject the ride request. The request has response status: "
+									+ receivedRideResponseStatus);
 					return response;
 				}
 
 				ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
 						"The provided ride request is not sent to the driver. Drivers can respond to only the received ride requests.");
 				return response;
-				
+
 			}
-			
+
 			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
 					"The current logged in user is not a driver. Only drivers can reject ride requests.");
 			return response;
-			
-			
+
 		} else {
 			// No user is authenticated
 			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
