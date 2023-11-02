@@ -35,28 +35,28 @@ public class DriverReceivedRidesServiceImplementation implements DriverReceivedR
 
 		for (DriverReceivedRides driverReceivedRide : pendingReceivedRides) {
 			// Update the status to "TIMED_OUT"
-			driverReceivedRide.setResponseStatus("TIMED_OUT");
+			driverReceivedRide.setResponseStatus("Timed Out");
 			driverReceivedRidesRepository.save(driverReceivedRide);
-			
-//			Long value = driverReceivedRidesRepository
-//					.countReceivedRidesWithStatus(driverReceivedRide.getRide().getRideId());
-//			System.out.println(value);
-//
-//			if (value == 0) {
-//				Ride ride = driverReceivedRide.getRide();
-//				ride.setStatus("Driver Unavailable");
-//				rideRepository.save(ride);
-//
-//				// Database Triger to save the ride status details to the RideStatus table
-//				// simultaneously
-//				RideStatus rideStatus = new RideStatus();
-//				rideStatus.setRideId(ride.getRideId());
-//				rideStatus.setStatus("Driver Unavailable");
-//				rideStatus.setStatusUpdateTime(LocalDateTime.now());
-//				rideStatus.setSourceName(ride.getSourceName());
-//				rideStatus.setSourceName(ride.getDestinationName());
-//				rideStatusRepository.save(rideStatus);
-//			}
+
+			Long value = driverReceivedRidesRepository
+					.countReceivedRidesWithStatus(driverReceivedRide.getRide().getRideId());
+			System.out.println(value);
+
+			if (value == 0) {
+				Ride ride = driverReceivedRide.getRide();
+				ride.setStatus("Driver Unavailable");
+				rideRepository.save(ride);
+
+				// Database Triger to save the ride status details to the RideStatus table
+				// simultaneously
+				RideStatus rideStatus = new RideStatus();
+				rideStatus.setRideId(ride.getRideId());
+				rideStatus.setStatus("Driver Unavailable");
+				rideStatus.setStatusUpdateTime(LocalDateTime.now());
+				rideStatus.setSourceName(ride.getSourceName());
+				rideStatus.setSourceName(ride.getDestinationName());
+				rideStatusRepository.save(rideStatus);
+			}
 		}
 
 	}
