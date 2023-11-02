@@ -44,4 +44,9 @@ public class RideController {
 	public ResponseEntity<ApiResponse> enRouteRide(@PathVariable Long rideId) {
 		return rideService.enRouteRide(rideId).finalResponse();
 	}
+
+	@PutMapping("progress-ride")
+	public ResponseEntity<ApiResponse> makeRideStatusInProgress(@PathVariable Long rideId) {
+		return rideService.makeRideStatusInProgress(rideId).finalResponse();
+	}
 }
