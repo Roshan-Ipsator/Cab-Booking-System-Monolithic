@@ -48,7 +48,7 @@ public class Ride {
 
 	private String paymentMode;
 
-	private Integer paidAmount;
+	private Double paidAmount;
 
 //    private RideStatus status;
 	private String status;
@@ -69,8 +69,5 @@ public class Ride {
 
 	@ManyToOne // Unidirectional
 	private User driver;
-
-	@OneToOne(cascade = CascadeType.ALL) // Unidirectional
-	private Payment payment;
 
 }

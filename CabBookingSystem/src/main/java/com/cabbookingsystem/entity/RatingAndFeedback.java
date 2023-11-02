@@ -23,16 +23,16 @@ public class RatingAndFeedback {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long ratingAndFeedbackId;
 
-	private Integer rating;
+	private Double rating;
 	private String feedback;
 
-	@ManyToOne(cascade = CascadeType.ALL)
+	@ManyToOne
 	private Ride ride;
 
-	@ManyToOne(cascade = CascadeType.ALL)
+	@ManyToOne
 	private User giver;
 
-	@ManyToOne(cascade = CascadeType.ALL)
+	@ManyToOne
 	private User receiver;
 
 }

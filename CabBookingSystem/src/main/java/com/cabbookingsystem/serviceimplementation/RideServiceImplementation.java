@@ -23,6 +23,7 @@ import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.BookRideRecord;
 import com.cabbookingsystem.record.ChangePaymentTypeAndModeRecord;
 import com.cabbookingsystem.record.CompleteRideRecord;
+import com.cabbookingsystem.record.RatingFeedbackRecord;
 import com.cabbookingsystem.repository.DriverAdditionalInfoRepository;
 import com.cabbookingsystem.repository.DriverReceivedRidesRepository;
 import com.cabbookingsystem.repository.RideRepository;
@@ -288,6 +289,7 @@ public class RideServiceImplementation implements RideService {
 											"Insufficient balance in user credits. Please, add more amount or change the payment type to Postpaid.");
 									return response;
 								} else {
+									currentRide.setRideEndTime(LocalDateTime.now());
 									passengerCredits
 											.setCurrentBalance(passengerCredits.getCurrentBalance() - totalFare);
 									userCreditsRepository.save(passengerCredits);
@@ -309,7 +311,7 @@ public class RideServiceImplementation implements RideService {
 									}
 									userCreditsRepository.save(driverCredits);
 								}
-
+								currentRide.setPaidAmount(totalFare);
 								currentRide.setStatus("Payment Completed");
 
 								// Database Triger to save the ride status details to the RideStatus table
@@ -797,6 +799,7 @@ public class RideServiceImplementation implements RideService {
 				}
 				userCreditsRepository.save(driverCredits);
 
+				currentRide.setPaidAmount(currentRide.getActualFare());
 				currentRide.setStatus("Payment Completed");
 				Ride updatedRide = rideRepository.save(currentRide);
 
@@ -825,6 +828,50 @@ public class RideServiceImplementation implements RideService {
 		}
 		ServiceResponse<Ride> response = new ServiceResponse<>(false, null, "Invalid ride Id: " + rideId);
 		return response;
+	}
+
+	@Override
+	public ServiceResponse<Ride> giveRatingFeedback(RatingFeedbackRecord ratingFeedbackRecord) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User giver = userOptional.get();
+			
+			Optional<Ride> rideOptional = rideRepository.findById(ratingFeedbackRecord.rideId());
+			
+			if(rideOptional.isPresent()) {
+				Ride currentRide = rideOptional.get();
+				
+				if(giver.getRole().getName().equalsIgnoreCase("Driver")) {
+					if(currentRide.getDriver().getUserId() == giver.getUserId()) {
+						
+					}
+					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+							"The giver is a driver but not of this ride.");
+					return response;
+				}
+				else {
+					if(currentRide.getPassenger().getUserId() == giver.getUserId()) {
+						
+					}
+					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+							"The giver is a passenger but not of this ride.");
+					return response;
+				}
+			}
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Invalid ride id: "+ratingFeedbackRecord.rideId());
+			return response;
+		}
+
+		else {
+			// No user is authenticated
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Currently no user is authenticated. Please, login first!");
+			return response;
+		}
 	}
 
 }

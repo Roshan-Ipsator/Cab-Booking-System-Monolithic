@@ -8,6 +8,7 @@ import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.BookRideRecord;
 import com.cabbookingsystem.record.ChangePaymentTypeAndModeRecord;
 import com.cabbookingsystem.record.CompleteRideRecord;
+import com.cabbookingsystem.record.RatingFeedbackRecord;
 
 public interface RideService {
 	public ServiceResponse<Ride> bookRide(BookRideRecord bookRideRecord);
@@ -28,5 +29,7 @@ public interface RideService {
 	public ServiceResponse<Ride> cancelRideByPassenger(Long rideId);
 
 	public ServiceResponse<Ride> makePaymentForRide(Long rideId);
+
+	public ServiceResponse<Ride> giveRatingFeedback(RatingFeedbackRecord ratingFeedbackRecord);
 
 }
