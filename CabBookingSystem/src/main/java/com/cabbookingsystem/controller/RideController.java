@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cabbookingsystem.payload.ApiResponse;
 import com.cabbookingsystem.record.AddVehicleRecord;
 import com.cabbookingsystem.record.BookRideRecord;
+import com.cabbookingsystem.record.ChangePaymentTypeAndModeRecord;
 import com.cabbookingsystem.record.CompleteRideRecord;
 import com.cabbookingsystem.service.RideService;
 
@@ -48,5 +49,11 @@ public class RideController {
 	@PutMapping("progress-ride")
 	public ResponseEntity<ApiResponse> makeRideStatusInProgress(@PathVariable Long rideId) {
 		return rideService.makeRideStatusInProgress(rideId).finalResponse();
+	}
+
+	@PutMapping("update-ride-payment-info")
+	public ResponseEntity<ApiResponse> changePaymentTypeAndMode(
+			@RequestBody ChangePaymentTypeAndModeRecord changePaymentTypeAndModeRecord) {
+		return rideService.changePaymentTypeAndMode(changePaymentTypeAndModeRecord).finalResponse();
 	}
 }

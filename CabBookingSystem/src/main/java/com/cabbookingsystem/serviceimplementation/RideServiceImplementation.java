@@ -20,6 +20,7 @@ import com.cabbookingsystem.entity.UserCredits;
 import com.cabbookingsystem.entity.VehicleType;
 import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.BookRideRecord;
+import com.cabbookingsystem.record.ChangePaymentTypeAndModeRecord;
 import com.cabbookingsystem.record.CompleteRideRecord;
 import com.cabbookingsystem.repository.DriverAdditionalInfoRepository;
 import com.cabbookingsystem.repository.DriverReceivedRidesRepository;
@@ -450,6 +451,78 @@ public class RideServiceImplementation implements RideService {
 			}
 			ServiceResponse<Ride> response = new ServiceResponse<>(false, null, "Only drivers can progress a ride.");
 			return response;
+		} else {
+			// No user is authenticated
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Currently no user is authenticated. Please, login first!");
+			return response;
+		}
+	}
+
+	@Override
+	public ServiceResponse<Ride> changePaymentTypeAndMode(
+			ChangePaymentTypeAndModeRecord changePaymentTypeAndModeRecord) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+
+			Optional<Ride> rideOptional = rideRepository.findById(changePaymentTypeAndModeRecord.rideId());
+
+			if (rideOptional.isPresent()) {
+				Ride currentRide = rideOptional.get();
+
+				if (currentRide.getPassenger().getUserId() == currentLoggedInUser.getUserId()) {
+					if (currentRide.getStatus().equals("Canceled By Driver")
+							|| currentRide.getStatus().equals("Canceled By User")
+							|| currentRide.getStatus().equals("Driver Unavailable")
+							|| currentRide.getStatus().equals("Payment Completed")
+							|| currentRide.getStatus().equals("Feedback Received")) {
+						ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+								"Payment type and mode cannot be changed. The ride's current status is: "
+										+ currentRide.getStatus());
+						return response;
+					}
+
+					if (changePaymentTypeAndModeRecord.paymentType().equalsIgnoreCase("Prepaid")
+							&& !changePaymentTypeAndModeRecord.paymentMode().equalsIgnoreCase("Credits")) {
+						ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+								"Payment type Prepaid can have only Credits as payment mode.");
+						return response;
+					}
+
+					currentRide.setPaymentType(changePaymentTypeAndModeRecord.paymentType());
+					currentRide.setPaymentMode(changePaymentTypeAndModeRecord.paymentMode());
+					Ride updatedRide = rideRepository.save(currentRide);
+
+					// Database Triger to save the ride status details to the RideStatus table
+					// simultaneously
+					RideStatus rideStatus = new RideStatus();
+					rideStatus.setRideId(updatedRide.getRideId());
+					rideStatus.setStatus("Payment Type And Mode Updated");
+					rideStatus.setStatusUpdateTime(LocalDateTime.now());
+					rideStatus.setSourceName(updatedRide.getSourceName());
+					rideStatus.setSourceLatitude(updatedRide.getSourceLatitude());
+					rideStatus.setSourceLongitude(updatedRide.getSourceLongitude());
+					rideStatus.setDestName(updatedRide.getDestinationName());
+					rideStatus.setDestLatitude(updatedRide.getDestinationLatitude());
+					rideStatus.setDestLongitude(updatedRide.getDestinationLongitude());
+					rideStatusRepository.save(rideStatus);
+
+					ServiceResponse<Ride> response = new ServiceResponse<>(true, updatedRide,
+							"Payment type and mode updated successfully.");
+					return response;
+				}
+				ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+						"This ride is not of this passenger.");
+				return response;
+			}
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Invalid ride id: " + changePaymentTypeAndModeRecord.rideId());
+			return response;
+
 		} else {
 			// No user is authenticated
 			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,

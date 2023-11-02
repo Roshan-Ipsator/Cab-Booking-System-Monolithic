@@ -6,6 +6,7 @@ import com.cabbookingsystem.entity.Ride;
 import com.cabbookingsystem.entity.User;
 import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.BookRideRecord;
+import com.cabbookingsystem.record.ChangePaymentTypeAndModeRecord;
 import com.cabbookingsystem.record.CompleteRideRecord;
 
 public interface RideService {
@@ -18,5 +19,8 @@ public interface RideService {
 	public ServiceResponse<Ride> enRouteRide(Long rideId);
 
 	public ServiceResponse<Ride> makeRideStatusInProgress(Long rideId);
+
+	public ServiceResponse<Ride> changePaymentTypeAndMode(
+			ChangePaymentTypeAndModeRecord changePaymentTypeAndModeRecord);
 
 }
