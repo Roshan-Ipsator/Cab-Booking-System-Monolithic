@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cabbookingsystem.payload.ApiResponse;
 import com.cabbookingsystem.record.AddVehicleRecord;
 import com.cabbookingsystem.record.BookRideRecord;
+import com.cabbookingsystem.record.CompleteRideRecord;
 import com.cabbookingsystem.service.RideService;
 
 import jakarta.validation.Valid;
@@ -31,5 +33,10 @@ public class RideController {
 	@GetMapping("/{rideId}")
 	public ResponseEntity<ApiResponse> sendRideRequestToDrivers(@PathVariable Long rideId) {
 		return rideService.sendRideRequestToDrivers(rideId).finalResponse();
+	}
+
+	@PutMapping
+	public ResponseEntity<ApiResponse> completeRide(@RequestBody CompleteRideRecord completeRideRecord) {
+		return rideService.completeRide(completeRideRecord).finalResponse();
 	}
 }

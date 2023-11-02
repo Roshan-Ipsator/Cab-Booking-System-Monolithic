@@ -25,4 +25,11 @@ public interface DriverReceivedRidesRepository extends JpaRepository<DriverRecei
 	@Query("SELECT COUNT(rr) FROM DriverReceivedRides rr " + "WHERE rr.ride.rideId = :rideId "
 			+ "AND rr.responseStatus NOT IN ('Timed Out', 'Rejected')")
 	Long countReceivedRidesWithStatus(Long rideId);
+
+	@Query("SELECT COUNT(rr) FROM DriverReceivedRides rr " + "WHERE rr.driver.userId = :driverId "
+			+ "AND rr.responseStatus = 'Accepted'")
+	Long countAcceptedRideRequestsByDriverId(Long driverId);
+
+	@Query("SELECT COUNT(rr) FROM DriverReceivedRides rr " + "WHERE rr.driver.userId = :driverId")
+	Long countAllRideRequestsByDriverId(Long driverId);
 }

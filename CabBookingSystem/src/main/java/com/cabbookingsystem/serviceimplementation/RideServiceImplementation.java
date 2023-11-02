@@ -20,6 +20,7 @@ import com.cabbookingsystem.entity.UserCredits;
 import com.cabbookingsystem.entity.VehicleType;
 import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.BookRideRecord;
+import com.cabbookingsystem.record.CompleteRideRecord;
 import com.cabbookingsystem.repository.DriverAdditionalInfoRepository;
 import com.cabbookingsystem.repository.DriverReceivedRidesRepository;
 import com.cabbookingsystem.repository.RideRepository;
@@ -85,6 +86,13 @@ public class RideServiceImplementation implements RideService {
 
 				// Check the user's payment type
 				if (bookRideRecord.paymentType().equalsIgnoreCase("Prepaid")) {
+
+					if (!bookRideRecord.paymentMode().equalsIgnoreCase("Credits")) {
+						ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+								"For Prepaid payment type, the payment mode must be Credits.");
+						return response;
+					}
+
 					// Check the user's credit amount
 					UserCredits userCredits = userCreditsRepository.findByUserUserId(currentLoggedInUser.getUserId());
 					if (userCredits.getCurrentBalance() < estimatedFarePrice) {
@@ -105,6 +113,7 @@ public class RideServiceImplementation implements RideService {
 				newRide.setDestinationLongitude(endLocationLongitude);
 				newRide.setEstimatedFare(estimatedFarePrice);
 				newRide.setPaymentType(bookRideRecord.paymentType());
+				newRide.setPaymentType(bookRideRecord.paymentMode());
 				newRide.setStatus("Booked");
 
 				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -124,7 +133,11 @@ public class RideServiceImplementation implements RideService {
 				rideStatus.setStatus("Booked");
 				rideStatus.setStatusUpdateTime(LocalDateTime.now());
 				rideStatus.setSourceName(bookedRide.getSourceName());
-				rideStatus.setSourceName(bookedRide.getDestinationName());
+				rideStatus.setSourceLatitude(startLocationLatitude);
+				rideStatus.setSourceLongitude(startLocationLongitude);
+				rideStatus.setDestName(bookedRide.getDestinationName());
+				rideStatus.setDestLatitude(endLocationLatitude);
+				rideStatus.setDestLongitude(endLocationLongitude);
 				rideStatusRepository.save(rideStatus);
 
 				ServiceResponse<Ride> response = new ServiceResponse<>(true, bookedRide, "Ride booked successfully!");
@@ -190,6 +203,144 @@ public class RideServiceImplementation implements RideService {
 		ServiceResponse<List<User>> response = new ServiceResponse<>(false, null,
 				"Invalid ride id: " + rideId + ". Please, try again with a valid id!");
 		return response;
+	}
+
+	@Override
+	public ServiceResponse<Ride> completeRide(CompleteRideRecord completeRideRecord) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+
+			if (currentLoggedInUser.getRole().getName().equalsIgnoreCase("Driver")) {
+				Optional<Ride> rideOptional = rideRepository.findById(completeRideRecord.rideId());
+
+				if (rideOptional.isPresent()) {
+					Ride currentRide = rideOptional.get();
+
+					if (currentRide.getDriver().getUserId() == currentLoggedInUser.getUserId()) {
+						if (currentRide.getStatus().equalsIgnoreCase("In Progress")) {
+
+							// Calculate the total final fare
+							double totalFare = 0;
+
+							Optional<RideStatus> rideStatusOptional = rideStatusRepository
+									.findMostRecentByRideIdAndStatus(completeRideRecord.rideId(),
+											"Destination Changed By Passenger");
+
+							if (rideStatusOptional.isPresent()) {
+								RideStatus rideStatus = rideStatusOptional.get();
+
+								double estimatedRideFare = currentRide.getEstimatedFare();
+
+								double prevSetRecentDistance = LocationUtils.calculateDistance(
+										rideStatus.getSourceLatitude(), rideStatus.getSourceLongitude(),
+										rideStatus.getDestLatitude(), rideStatus.getDestLongitude());
+
+								double actualRecentDistance = LocationUtils.calculateDistance(
+										rideStatus.getSourceLatitude(), rideStatus.getSourceLongitude(),
+										completeRideRecord.destinationLatitude(),
+										completeRideRecord.destinationLongitude());
+
+								double prevPrice = prevSetRecentDistance
+										* (currentRide.getVehicleType().getPricePerKm());
+
+								double actualPrice = actualRecentDistance
+										* (currentRide.getVehicleType().getPricePerKm());
+
+								totalFare = (estimatedRideFare - prevPrice) + actualPrice;
+							} else {
+								double estimatedRideFare = currentRide.getEstimatedFare();
+
+								double prevSetDistance = LocationUtils.calculateDistance(
+										currentRide.getSourceLatitude(), currentRide.getSourceLongitude(),
+										currentRide.getDestinationLatitude(), currentRide.getDestinationLongitude());
+
+								double actualDistance = LocationUtils.calculateDistance(currentRide.getSourceLatitude(),
+										currentRide.getSourceLongitude(), completeRideRecord.destinationLatitude(),
+										completeRideRecord.destinationLongitude());
+
+								double prevPrice = prevSetDistance * (currentRide.getVehicleType().getPricePerKm());
+
+								double actualPrice = actualDistance * (currentRide.getVehicleType().getPricePerKm());
+
+								totalFare = (estimatedRideFare - prevPrice) + actualPrice;
+
+							}
+
+							if (currentRide.getPaymentType().equalsIgnoreCase("Prepaid")) {
+
+								UserCredits passengerCredits = userCreditsRepository
+										.findByUserUserId(currentRide.getPassenger().getUserId());
+
+								if (passengerCredits.getCurrentBalance() < totalFare) {
+									ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+											"Insufficient balance in user credits. Please, add more amount or change the payment type to Postpaid.");
+									return response;
+								}
+							}
+
+							currentRide.setStatus("Completed");
+
+							Ride updatedRide = rideRepository.save(currentRide);
+
+							// Database Triger to save the ride status details to the RideStatus table
+							// simultaneously
+							RideStatus rideStatus = new RideStatus();
+							rideStatus.setRideId(updatedRide.getRideId());
+							rideStatus.setStatus("Completed");
+							rideStatus.setStatusUpdateTime(LocalDateTime.now());
+							rideStatus.setSourceName(updatedRide.getSourceName());
+							rideStatus.setSourceLatitude(updatedRide.getSourceLatitude());
+							rideStatus.setSourceLongitude(updatedRide.getSourceLongitude());
+							rideStatus.setDestName(updatedRide.getDestinationName());
+							rideStatus.setDestLatitude(updatedRide.getDestinationLatitude());
+							rideStatus.setDestLongitude(updatedRide.getDestinationLongitude());
+							rideStatusRepository.save(rideStatus);
+
+							// Update driver's acceptance rate
+							long acceptedRideCount = driverReceivedRidesRepository
+									.countAcceptedRideRequestsByDriverId(currentLoggedInUser.getUserId());
+
+							long totalReceivedRideCount = driverReceivedRidesRepository
+									.countAllRideRequestsByDriverId(currentLoggedInUser.getUserId());
+
+							double rideAcceptanceRate = (acceptedRideCount / totalReceivedRideCount) * 100;
+
+							DriverAdditionalInfo driverAdditionalInfo = driverAdditionalInfoRepository
+									.findByDriver(currentLoggedInUser);
+
+							driverAdditionalInfo.setRideAcceptanceRate(rideAcceptanceRate);
+
+							driverAdditionalInfoRepository.save(driverAdditionalInfo);
+
+							ServiceResponse<Ride> response = new ServiceResponse<>(true, updatedRide,
+									"Ride completed successfully. Please, process the payment");
+							return response;
+						}
+						ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+								"This ride cannot be completed. The current ride status is: "
+										+ currentRide.getStatus());
+						return response;
+					}
+					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+							"Drivers can complete only the assigned rides.");
+					return response;
+				}
+				ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+						"Invalid ride id: " + completeRideRecord.rideId());
+				return response;
+			}
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null, "Only drivers can complete a ride.");
+			return response;
+		} else {
+			// No user is authenticated
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Currently no user is authenticated. Please, login first!");
+			return response;
+		}
 	}
 
 }

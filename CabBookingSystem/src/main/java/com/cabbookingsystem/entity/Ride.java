@@ -42,7 +42,11 @@ public class Ride {
 
 	private Double estimatedFare;
 
+	private Double actualFare;
+
 	private String paymentType; // Prepaid or Postpaid
+
+	private String paymentMode;
 
 //    private RideStatus status;
 	private String status;

@@ -31,5 +31,13 @@ public class RideStatus {
 
 	private String sourceName;
 
+	private Double sourceLatitude;
+
+	private Double sourceLongitude;
+
 	private String destName;
+
+	private Double destLatitude;
+
+	private Double destLongitude;
 }

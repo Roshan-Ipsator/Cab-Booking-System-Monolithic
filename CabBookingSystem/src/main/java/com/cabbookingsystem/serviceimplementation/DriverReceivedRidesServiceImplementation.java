@@ -54,7 +54,11 @@ public class DriverReceivedRidesServiceImplementation implements DriverReceivedR
 				rideStatus.setStatus("Driver Unavailable");
 				rideStatus.setStatusUpdateTime(LocalDateTime.now());
 				rideStatus.setSourceName(ride.getSourceName());
-				rideStatus.setSourceName(ride.getDestinationName());
+				rideStatus.setSourceLatitude(ride.getSourceLatitude());
+				rideStatus.setSourceLongitude(ride.getSourceLongitude());
+				rideStatus.setDestName(ride.getDestinationName());
+				rideStatus.setDestLatitude(ride.getDestinationLatitude());
+				rideStatus.setDestLongitude(ride.getDestinationLongitude());
 				rideStatusRepository.save(rideStatus);
 			}
 		}

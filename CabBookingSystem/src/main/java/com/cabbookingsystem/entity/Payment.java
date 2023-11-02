@@ -22,6 +22,4 @@ public class Payment {
 	private Long paymentId;
 
 	private Integer amount;
-	
-	private String paymentMode;
 }

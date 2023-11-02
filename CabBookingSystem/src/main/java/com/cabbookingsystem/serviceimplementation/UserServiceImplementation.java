@@ -716,7 +716,11 @@ public class UserServiceImplementation implements UserService {
 							rideStatus.setStatus("Accepted");
 							rideStatus.setStatusUpdateTime(LocalDateTime.now());
 							rideStatus.setSourceName(associatedRide.getSourceName());
-							rideStatus.setSourceName(associatedRide.getDestinationName());
+							rideStatus.setSourceLatitude(updatedRide.getSourceLatitude());
+							rideStatus.setSourceLongitude(updatedRide.getSourceLongitude());
+							rideStatus.setDestName(associatedRide.getDestinationName());
+							rideStatus.setDestLatitude(updatedRide.getDestinationLatitude());
+							rideStatus.setDestLongitude(updatedRide.getDestinationLongitude());
 							rideStatusRepository.save(rideStatus);
 
 							ServiceResponse<Ride> response = new ServiceResponse<>(true, updatedRide,
@@ -777,6 +781,12 @@ public class UserServiceImplementation implements UserService {
 								rideStatus.setRideId(rideId);
 								rideStatus.setStatus("Picked Up");
 								rideStatus.setStatusUpdateTime(LocalDateTime.now());
+								rideStatus.setSourceName(updatedRide.getSourceName());
+								rideStatus.setSourceLatitude(updatedRide.getSourceLatitude());
+								rideStatus.setSourceLongitude(updatedRide.getSourceLongitude());
+								rideStatus.setDestName(updatedRide.getDestinationName());
+								rideStatus.setDestLatitude(updatedRide.getDestinationLatitude());
+								rideStatus.setDestLongitude(updatedRide.getDestinationLongitude());
 								rideStatusRepository.save(rideStatus);
 
 								ServiceResponse<Ride> response = new ServiceResponse<>(true, updatedRide,
@@ -866,8 +876,12 @@ public class UserServiceImplementation implements UserService {
 						rideStatus.setRideId(changeDestinationRecord.rideId());
 						rideStatus.setStatus("Destination Changed By Passenger");
 						rideStatus.setStatusUpdateTime(LocalDateTime.now());
-						rideStatus.setSourceName(ride.getSourceName());
+						rideStatus.setSourceName(changeDestinationRecord.currentLocationName());
+						rideStatus.setSourceLatitude(changeDestinationRecord.currentLatitude());
+						rideStatus.setSourceLongitude(changeDestinationRecord.currentLongitude());
 						rideStatus.setDestName(changeDestinationRecord.newDestinationName());
+						rideStatus.setDestLatitude(newDestLatitude);
+						rideStatus.setDestLongitude(newDestLongitude);
 						rideStatusRepository.save(rideStatus);
 
 						ride.setDestinationName(changeDestinationRecord.newDestinationName());
@@ -982,7 +996,11 @@ public class UserServiceImplementation implements UserService {
 							rideStatus.setStatus("Driver Unavailable");
 							rideStatus.setStatusUpdateTime(LocalDateTime.now());
 							rideStatus.setSourceName(associatedRide.getSourceName());
-							rideStatus.setSourceName(associatedRide.getDestinationName());
+							rideStatus.setSourceLatitude(associatedRide.getSourceLatitude());
+							rideStatus.setSourceLongitude(associatedRide.getSourceLongitude());
+							rideStatus.setDestName(associatedRide.getDestinationName());
+							rideStatus.setDestLatitude(associatedRide.getDestinationLatitude());
+							rideStatus.setDestLongitude(associatedRide.getDestinationLongitude());
 							rideStatusRepository.save(rideStatus);
 						}
 
