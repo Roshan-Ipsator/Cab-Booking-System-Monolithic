@@ -67,4 +67,9 @@ public class RideController {
 		return rideService.cancelRideByPassenger(rideId).finalResponse();
 	}
 
+	@PutMapping("make-payment-for-ride/{rideId}")
+	public ResponseEntity<ApiResponse> makePaymentForRide(@PathVariable Long rideId) {
+		return rideService.makePaymentForRide(rideId).finalResponse();
+	}
+
 }

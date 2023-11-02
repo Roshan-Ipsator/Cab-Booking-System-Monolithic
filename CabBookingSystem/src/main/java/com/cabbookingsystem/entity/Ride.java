@@ -48,6 +48,8 @@ public class Ride {
 
 	private String paymentMode;
 
+	private Integer paidAmount;
+
 //    private RideStatus status;
 	private String status;
 

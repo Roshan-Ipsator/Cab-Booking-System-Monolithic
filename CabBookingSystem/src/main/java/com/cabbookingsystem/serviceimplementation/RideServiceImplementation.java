@@ -287,26 +287,77 @@ public class RideServiceImplementation implements RideService {
 									ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
 											"Insufficient balance in user credits. Please, add more amount or change the payment type to Postpaid.");
 									return response;
+								} else {
+									passengerCredits
+											.setCurrentBalance(passengerCredits.getCurrentBalance() - totalFare);
+									userCreditsRepository.save(passengerCredits);
+									User driver = currentRide.getDriver();
+									UserCredits driverCredits = userCreditsRepository
+											.findByUserUserId(driver.getUserId());
+									double grossAmount = totalFare * (40 / 100);
+									double commission = grossAmount * (8 / 100);
+									double finalPrice = grossAmount - commission;
+									double driverTotalBalance = driverCredits.getCurrentBalance() + finalPrice;
+									if (driverTotalBalance >= driverCredits.getOverDue()) {
+										driverCredits
+												.setCurrentBalance(driverTotalBalance - driverCredits.getOverDue());
+										driverCredits.setOverDue((double) 0);
+									} else {
+										double driverFinalOverDue = driverCredits.getOverDue() - driverTotalBalance;
+										driverCredits.setCurrentBalance((double) 0);
+										driverCredits.setOverDue(driverFinalOverDue);
+									}
+									userCreditsRepository.save(driverCredits);
 								}
+
+								currentRide.setStatus("Payment Completed");
+
+								// Database Triger to save the ride status details to the RideStatus table
+								// simultaneously
+								RideStatus rideStatus1 = new RideStatus();
+								rideStatus1.setRideId(currentRide.getRideId());
+								rideStatus1.setStatus("Completed");
+								rideStatus1.setStatusUpdateTime(LocalDateTime.now());
+								rideStatus1.setSourceName(currentRide.getSourceName());
+								rideStatus1.setSourceLatitude(currentRide.getSourceLatitude());
+								rideStatus1.setSourceLongitude(currentRide.getSourceLongitude());
+								rideStatus1.setDestName(currentRide.getDestinationName());
+								rideStatus1.setDestLatitude(currentRide.getDestinationLatitude());
+								rideStatus1.setDestLongitude(currentRide.getDestinationLongitude());
+								rideStatusRepository.save(rideStatus1);
+
+								RideStatus rideStatus2 = new RideStatus();
+								rideStatus2.setRideId(currentRide.getRideId());
+								rideStatus2.setStatus("Payment Completed");
+								rideStatus2.setStatusUpdateTime(LocalDateTime.now());
+								rideStatus2.setSourceName(currentRide.getSourceName());
+								rideStatus2.setSourceLatitude(currentRide.getSourceLatitude());
+								rideStatus2.setSourceLongitude(currentRide.getSourceLongitude());
+								rideStatus2.setDestName(currentRide.getDestinationName());
+								rideStatus2.setDestLatitude(currentRide.getDestinationLatitude());
+								rideStatus2.setDestLongitude(currentRide.getDestinationLongitude());
+								rideStatusRepository.save(rideStatus2);
+
+							} else {
+								currentRide.setStatus("Completed");
+
+								// Database Triger to save the ride status details to the RideStatus table
+								// simultaneously
+								RideStatus rideStatus = new RideStatus();
+								rideStatus.setRideId(currentRide.getRideId());
+								rideStatus.setStatus("Completed");
+								rideStatus.setStatusUpdateTime(LocalDateTime.now());
+								rideStatus.setSourceName(currentRide.getSourceName());
+								rideStatus.setSourceLatitude(currentRide.getSourceLatitude());
+								rideStatus.setSourceLongitude(currentRide.getSourceLongitude());
+								rideStatus.setDestName(currentRide.getDestinationName());
+								rideStatus.setDestLatitude(currentRide.getDestinationLatitude());
+								rideStatus.setDestLongitude(currentRide.getDestinationLongitude());
+								rideStatusRepository.save(rideStatus);
 							}
 
-							currentRide.setStatus("Completed");
-
+							currentRide.setActualFare(totalFare);
 							Ride updatedRide = rideRepository.save(currentRide);
-
-							// Database Triger to save the ride status details to the RideStatus table
-							// simultaneously
-							RideStatus rideStatus = new RideStatus();
-							rideStatus.setRideId(updatedRide.getRideId());
-							rideStatus.setStatus("Completed");
-							rideStatus.setStatusUpdateTime(LocalDateTime.now());
-							rideStatus.setSourceName(updatedRide.getSourceName());
-							rideStatus.setSourceLatitude(updatedRide.getSourceLatitude());
-							rideStatus.setSourceLongitude(updatedRide.getSourceLongitude());
-							rideStatus.setDestName(updatedRide.getDestinationName());
-							rideStatus.setDestLatitude(updatedRide.getDestinationLatitude());
-							rideStatus.setDestLongitude(updatedRide.getDestinationLongitude());
-							rideStatusRepository.save(rideStatus);
 
 							// Update driver's acceptance rate
 							long acceptedRideCount = driverReceivedRidesRepository
@@ -714,6 +765,66 @@ public class RideServiceImplementation implements RideService {
 					"Currently no user is authenticated. Please, login first!");
 			return response;
 		}
+	}
+
+	@Override
+	public ServiceResponse<Ride> makePaymentForRide(Long rideId) {
+		Optional<Ride> rideOptional = rideRepository.findById(rideId);
+
+		if (rideOptional.isPresent()) {
+			Ride currentRide = rideOptional.get();
+
+			if (currentRide.getStatus().equalsIgnoreCase("Completed")) {
+				if (currentRide.getPaymentType().equalsIgnoreCase("Prepaid")) {
+					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+							"All Prepaid rides are done with payment when the get completed.");
+					return response;
+				}
+
+				User driver = currentRide.getDriver();
+				UserCredits driverCredits = userCreditsRepository.findByUserUserId(driver.getUserId());
+				double grossAmount = currentRide.getActualFare() * (40 / 100);
+				double commission = grossAmount * (8 / 100);
+				double finalPrice = grossAmount - commission;
+				double driverTotalBalance = driverCredits.getCurrentBalance() + finalPrice;
+				if (driverTotalBalance >= driverCredits.getOverDue()) {
+					driverCredits.setCurrentBalance(driverTotalBalance - driverCredits.getOverDue());
+					driverCredits.setOverDue((double) 0);
+				} else {
+					double driverFinalOverDue = driverCredits.getOverDue() - driverTotalBalance;
+					driverCredits.setCurrentBalance((double) 0);
+					driverCredits.setOverDue(driverFinalOverDue);
+				}
+				userCreditsRepository.save(driverCredits);
+
+				currentRide.setStatus("Payment Completed");
+				Ride updatedRide = rideRepository.save(currentRide);
+
+				// Database Triger to save the ride status details to the RideStatus table
+				// simultaneously
+				RideStatus rideStatus = new RideStatus();
+				rideStatus.setRideId(updatedRide.getRideId());
+				rideStatus.setStatus("Payment Completed");
+				rideStatus.setStatusUpdateTime(LocalDateTime.now());
+				rideStatus.setSourceName(updatedRide.getSourceName());
+				rideStatus.setSourceLatitude(updatedRide.getSourceLatitude());
+				rideStatus.setSourceLongitude(updatedRide.getSourceLongitude());
+				rideStatus.setDestName(updatedRide.getDestinationName());
+				rideStatus.setDestLatitude(updatedRide.getDestinationLatitude());
+				rideStatus.setDestLongitude(updatedRide.getDestinationLongitude());
+				rideStatusRepository.save(rideStatus);
+
+				ServiceResponse<Ride> response = new ServiceResponse<>(true, updatedRide,
+						"Payment made for the ride successfully.");
+				return response;
+			}
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"You can make payment once the ride is completed. Now, the ride status is: "
+							+ currentRide.getStatus());
+			return response;
+		}
+		ServiceResponse<Ride> response = new ServiceResponse<>(false, null, "Invalid ride Id: " + rideId);
+		return response;
 	}
 
 }
