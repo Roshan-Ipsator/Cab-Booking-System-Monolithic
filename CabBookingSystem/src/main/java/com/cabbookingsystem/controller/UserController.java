@@ -81,4 +81,9 @@ public class UserController {
 		return userService.rejectRideRequest(rideId).finalResponse();
 	}
 
+	@PutMapping("change-status-unavailable")
+	public ResponseEntity<ApiResponse> changeStatusToUnavailable() {
+		return userService.changeStatusToUnavailable().finalResponse();
+	}
+
 }

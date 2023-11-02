@@ -1015,6 +1015,40 @@ public class UserServiceImplementation implements UserService {
 		}
 	}
 
+	@Override
+	public ServiceResponse<DriverAdditionalInfo> changeStatusToUnavailable() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+
+			if (currentLoggedInUser.getRole().getName().equalsIgnoreCase("Driver")) {
+				DriverAdditionalInfo driverAdditionalInfo = driverAdditionalInfoRepository
+						.findByDriver(currentLoggedInUser);
+				if (driverAdditionalInfo.getAvailabilityStatus().equalsIgnoreCase("Unavailable")) {
+					ServiceResponse<DriverAdditionalInfo> response = new ServiceResponse<>(false, null,
+							"Current driver's availability status is already Unavailable.");
+					return response;
+				}
+				driverAdditionalInfo.setAvailabilityStatus("Unavailable");
+				DriverAdditionalInfo updatedInfo = driverAdditionalInfoRepository.save(driverAdditionalInfo);
+
+				ServiceResponse<DriverAdditionalInfo> response = new ServiceResponse<>(true, updatedInfo,
+						"Current driver's availability status successfully updated to Unavailable.");
+				return response;
+			}
+			ServiceResponse<DriverAdditionalInfo> response = new ServiceResponse<>(false, null,
+					"Current logged in user is not a Driver.");
+			return response;
+		}
+		// No user is authenticated
+		ServiceResponse<DriverAdditionalInfo> response = new ServiceResponse<>(false, null,
+				"Currently no user is authenticated. Please, login first!");
+		return response;
+	}
+
 //	@Override
 //	public ServiceResponse<User> setPhoneNumber(String phone) {
 //		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

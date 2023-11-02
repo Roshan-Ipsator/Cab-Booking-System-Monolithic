@@ -99,4 +99,6 @@ public interface UserService {
 
 	public ServiceResponse<Ride> rejectRideRequest(Long rideId);
 
+	public ServiceResponse<DriverAdditionalInfo> changeStatusToUnavailable();
+
 }
