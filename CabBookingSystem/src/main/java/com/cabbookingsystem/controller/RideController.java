@@ -35,8 +35,13 @@ public class RideController {
 		return rideService.sendRideRequestToDrivers(rideId).finalResponse();
 	}
 
-	@PutMapping
+	@PutMapping("complete-ride")
 	public ResponseEntity<ApiResponse> completeRide(@RequestBody CompleteRideRecord completeRideRecord) {
 		return rideService.completeRide(completeRideRecord).finalResponse();
+	}
+
+	@PutMapping("enroute-ride")
+	public ResponseEntity<ApiResponse> enRouteRide(@PathVariable Long rideId) {
+		return rideService.enRouteRide(rideId).finalResponse();
 	}
 }

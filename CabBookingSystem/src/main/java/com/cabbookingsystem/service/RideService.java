@@ -12,7 +12,9 @@ public interface RideService {
 	public ServiceResponse<Ride> bookRide(BookRideRecord bookRideRecord);
 
 	public ServiceResponse<List<User>> sendRideRequestToDrivers(Long rideId);
-	
+
 	public ServiceResponse<Ride> completeRide(CompleteRideRecord completeRideRecord);
 	
+	public ServiceResponse<Ride> enRouteRide(Long rideId);
+
 }
