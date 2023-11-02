@@ -25,4 +25,6 @@ public interface RideService {
 
 	public ServiceResponse<Ride> cancelRideByDriver(Long rideId);
 
+	public ServiceResponse<Ride> cancelRideByPassenger(Long rideId);
+
 }

@@ -27,7 +27,8 @@ public interface DriverReceivedRidesRepository extends JpaRepository<DriverRecei
 	Long countReceivedRidesWithStatus(Long rideId);
 
 	@Query("SELECT COUNT(rr) FROM DriverReceivedRides rr " + "WHERE rr.driver.userId = :driverId "
-			+ "AND rr.responseStatus = 'Accepted'")
+			+ "AND rr.responseStatus = 'Accepted' "
+			+ "AND rr.ride.status IN ('Completed', 'Canceled By Passenger', 'Payment Completed', 'Feedback Received')")
 	Long countAcceptedRideRequestsByDriverId(Long driverId);
 
 	@Query("SELECT COUNT(rr) FROM DriverReceivedRides rr " + "WHERE rr.driver.userId = :driverId")

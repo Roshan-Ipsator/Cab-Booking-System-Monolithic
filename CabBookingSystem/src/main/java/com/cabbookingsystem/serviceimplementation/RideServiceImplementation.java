@@ -1,5 +1,6 @@
 package com.cabbookingsystem.serviceimplementation;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -251,7 +252,10 @@ public class RideServiceImplementation implements RideService {
 								double actualPrice = actualRecentDistance
 										* (currentRide.getVehicleType().getPricePerKm());
 
-								totalFare = (estimatedRideFare - prevPrice) + actualPrice;
+								double overdue = userCreditsRepository.findByUserUserId(currentLoggedInUser.getUserId())
+										.getOverDue();
+
+								totalFare = (estimatedRideFare - prevPrice) + actualPrice + overdue;
 							} else {
 								double estimatedRideFare = currentRide.getEstimatedFare();
 
@@ -267,7 +271,10 @@ public class RideServiceImplementation implements RideService {
 
 								double actualPrice = actualDistance * (currentRide.getVehicleType().getPricePerKm());
 
-								totalFare = (estimatedRideFare - prevPrice) + actualPrice;
+								double overdue = userCreditsRepository.findByUserUserId(currentLoggedInUser.getUserId())
+										.getOverDue();
+
+								totalFare = (estimatedRideFare - prevPrice) + actualPrice + overdue;
 
 							}
 
@@ -594,6 +601,114 @@ public class RideServiceImplementation implements RideService {
 			return response;
 
 		} else {
+			// No user is authenticated
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Currently no user is authenticated. Please, login first!");
+			return response;
+		}
+	}
+
+	@Override
+	public ServiceResponse<Ride> cancelRideByPassenger(Long rideId) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+
+			Optional<Ride> rideOptional = rideRepository.findById(rideId);
+
+			if (rideOptional.isPresent()) {
+				Ride currentRide = rideOptional.get();
+
+				if (currentRide.getPassenger().getUserId() == currentLoggedInUser.getUserId()) {
+					if (currentRide.getStatus().equals("Booked") || currentRide.getStatus().equals("Accepted")
+							|| currentRide.getStatus().equals("En Route")) {
+						if (currentRide.getStatus().equals("Accepted") || currentRide.getStatus().equals("En Route")) {
+
+							LocalDateTime acceptedTime = rideStatusRepository.findAcceptedTimeByRideId(rideId);
+
+							Duration duration = Duration.between(acceptedTime, LocalDateTime.now());
+
+							long minutes = duration.toMinutes();
+
+							if (minutes > 5) {
+								if (currentRide.getPaymentType().equalsIgnoreCase("Prepaid")) {
+									double userCreditBalance = userCreditsRepository
+											.findByUserUserId(currentLoggedInUser.getUserId()).getCurrentBalance();
+
+									UserCredits userCredit = userCreditsRepository
+											.findByUserUserId(currentLoggedInUser.getUserId());
+									if (userCreditBalance >= 25) {
+										userCredit.setCurrentBalance(userCredit.getCurrentBalance() - 25);
+										userCreditsRepository.save(userCredit);
+									} else {
+										// Insufficient balance
+										userCredit.setOverDue(userCredit.getOverDue() + 25);
+										userCreditsRepository.save(userCredit);
+									}
+								} else {
+									UserCredits userCredit = userCreditsRepository
+											.findByUserUserId(currentLoggedInUser.getUserId());
+									userCredit.setOverDue(userCredit.getOverDue() + 25);
+									userCreditsRepository.save(userCredit);
+								}
+							}
+
+						}
+						currentRide.setStatus("Canceled By Passenger");
+						Ride updatedRide = rideRepository.save(currentRide);
+
+						// Database Triger to save the ride status details to the RideStatus table
+						// simultaneously
+						RideStatus rideStatus = new RideStatus();
+						rideStatus.setRideId(updatedRide.getRideId());
+						rideStatus.setStatus("Canceled By Passenger");
+						rideStatus.setStatusUpdateTime(LocalDateTime.now());
+						rideStatus.setSourceName(updatedRide.getSourceName());
+						rideStatus.setSourceLatitude(updatedRide.getSourceLatitude());
+						rideStatus.setSourceLongitude(updatedRide.getSourceLongitude());
+						rideStatus.setDestName(updatedRide.getDestinationName());
+						rideStatus.setDestLatitude(updatedRide.getDestinationLatitude());
+						rideStatus.setDestLongitude(updatedRide.getDestinationLongitude());
+						rideStatusRepository.save(rideStatus);
+
+						// Update driver's acceptance rate
+						long acceptedRideCount = driverReceivedRidesRepository
+								.countAcceptedRideRequestsByDriverId(updatedRide.getDriver().getUserId());
+
+						long totalReceivedRideCount = driverReceivedRidesRepository
+								.countAllRideRequestsByDriverId(updatedRide.getDriver().getUserId());
+
+						double rideAcceptanceRate = (acceptedRideCount / totalReceivedRideCount) * 100;
+
+						DriverAdditionalInfo driverAdditionalInfo = driverAdditionalInfoRepository
+								.findByDriver(updatedRide.getDriver());
+
+						driverAdditionalInfo.setRideAcceptanceRate(rideAcceptanceRate);
+
+						driverAdditionalInfoRepository.save(driverAdditionalInfo);
+
+						ServiceResponse<Ride> response = new ServiceResponse<>(true, updatedRide,
+								"The ride has been canceled by the passenger successfully.");
+						return response;
+					}
+
+					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+							"The ride cannot be canceled. The ride's current status is: " + currentRide.getStatus());
+					return response;
+				}
+				ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+						"The current user is not the passenger for this ride.");
+				return response;
+			}
+
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null, "Invalid ride id: " + rideId);
+			return response;
+		}
+
+		else {
 			// No user is authenticated
 			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
 					"Currently no user is authenticated. Please, login first!");

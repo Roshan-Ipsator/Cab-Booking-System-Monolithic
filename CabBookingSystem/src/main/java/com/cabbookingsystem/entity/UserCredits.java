@@ -27,6 +27,7 @@ public class UserCredits {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long creditsId;
 	private Double currentBalance;
+	private Double overDue;
 
 	@OneToOne // Unidirectional
 	@JoinColumn(name = "user_id")

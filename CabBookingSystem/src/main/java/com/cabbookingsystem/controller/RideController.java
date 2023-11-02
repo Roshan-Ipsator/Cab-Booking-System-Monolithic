@@ -62,4 +62,9 @@ public class RideController {
 		return rideService.cancelRideByDriver(rideId).finalResponse();
 	}
 
+	@PutMapping("cancel-ride-by-passenger/{rideId}")
+	public ResponseEntity<ApiResponse> cancelRideByPassenger(@PathVariable Long rideId) {
+		return rideService.cancelRideByPassenger(rideId).finalResponse();
+	}
+
 }
