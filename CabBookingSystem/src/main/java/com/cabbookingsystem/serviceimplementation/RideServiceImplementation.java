@@ -531,4 +531,74 @@ public class RideServiceImplementation implements RideService {
 		}
 	}
 
+	@Override
+	public ServiceResponse<Ride> cancelRideByDriver(Long rideId) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+
+			if (currentLoggedInUser.getRole().getName().equalsIgnoreCase("Driver")) {
+				Optional<Ride> rideOptional = rideRepository.findById(rideId);
+
+				if (rideOptional.isPresent()) {
+					Ride currentRide = rideOptional.get();
+
+					if (currentRide.getDriver().getUserId() == currentLoggedInUser.getUserId()) {
+						if (currentRide.getStatus().equalsIgnoreCase("Accepted")
+								|| currentRide.getStatus().equalsIgnoreCase("En Route")) {
+							currentRide.setStatus("Canceled By Driver");
+							Ride updatedRide = rideRepository.save(currentRide);
+
+							DriverReceivedRides receivedRide = driverReceivedRidesRepository
+									.findReceivedRidesByDriverAndRideIds(currentLoggedInUser.getUserId(), rideId);
+							receivedRide.setResponseStatus("Canceled");
+							driverReceivedRidesRepository.save(receivedRide);
+
+							// Database Triger to save the ride status details to the RideStatus table
+							// simultaneously
+							RideStatus rideStatus = new RideStatus();
+							rideStatus.setRideId(updatedRide.getRideId());
+							rideStatus.setStatus("Canceled By Driver");
+							rideStatus.setStatusUpdateTime(LocalDateTime.now());
+							rideStatus.setSourceName(updatedRide.getSourceName());
+							rideStatus.setSourceLatitude(updatedRide.getSourceLatitude());
+							rideStatus.setSourceLongitude(updatedRide.getSourceLongitude());
+							rideStatus.setDestName(updatedRide.getDestinationName());
+							rideStatus.setDestLatitude(updatedRide.getDestinationLatitude());
+							rideStatus.setDestLongitude(updatedRide.getDestinationLongitude());
+							rideStatusRepository.save(rideStatus);
+
+							ServiceResponse<Ride> response = new ServiceResponse<>(true, updatedRide,
+									"The ride has been canceled by the driver.");
+							return response;
+						}
+						ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+								"The ride cannot be canceled by the driver. The ride status is: "
+										+ currentRide.getStatus());
+						return response;
+					}
+
+					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+							"The current driver is not assigned with the provided ride.");
+					return response;
+				}
+
+				ServiceResponse<Ride> response = new ServiceResponse<>(false, null, "Invalid ride id: " + rideId);
+				return response;
+			}
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Current logged in user is not a driver.");
+			return response;
+
+		} else {
+			// No user is authenticated
+			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+					"Currently no user is authenticated. Please, login first!");
+			return response;
+		}
+	}
+
 }

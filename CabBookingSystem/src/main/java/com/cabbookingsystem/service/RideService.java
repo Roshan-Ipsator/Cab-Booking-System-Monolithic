@@ -23,4 +23,6 @@ public interface RideService {
 	public ServiceResponse<Ride> changePaymentTypeAndMode(
 			ChangePaymentTypeAndModeRecord changePaymentTypeAndModeRecord);
 
+	public ServiceResponse<Ride> cancelRideByDriver(Long rideId);
+
 }

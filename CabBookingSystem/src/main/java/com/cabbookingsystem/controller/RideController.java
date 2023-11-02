@@ -41,12 +41,12 @@ public class RideController {
 		return rideService.completeRide(completeRideRecord).finalResponse();
 	}
 
-	@PutMapping("enroute-ride")
+	@PutMapping("enroute-ride/{rideId}")
 	public ResponseEntity<ApiResponse> enRouteRide(@PathVariable Long rideId) {
 		return rideService.enRouteRide(rideId).finalResponse();
 	}
 
-	@PutMapping("progress-ride")
+	@PutMapping("progress-ride/{rideId}")
 	public ResponseEntity<ApiResponse> makeRideStatusInProgress(@PathVariable Long rideId) {
 		return rideService.makeRideStatusInProgress(rideId).finalResponse();
 	}
@@ -56,4 +56,10 @@ public class RideController {
 			@RequestBody ChangePaymentTypeAndModeRecord changePaymentTypeAndModeRecord) {
 		return rideService.changePaymentTypeAndMode(changePaymentTypeAndModeRecord).finalResponse();
 	}
+
+	@PutMapping("cancel-ride-by-driver/{rideId}")
+	public ResponseEntity<ApiResponse> cancelRideByDriver(@PathVariable Long rideId) {
+		return rideService.cancelRideByDriver(rideId).finalResponse();
+	}
+
 }
