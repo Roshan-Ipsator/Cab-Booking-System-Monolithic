@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import com.cabbookingsystem.entity.DriverAdditionalInfo;
 import com.cabbookingsystem.entity.DriverReceivedRides;
+import com.cabbookingsystem.entity.RatingAndFeedback;
 import com.cabbookingsystem.entity.Ride;
 import com.cabbookingsystem.entity.RideStatus;
 import com.cabbookingsystem.entity.User;
@@ -23,9 +24,11 @@ import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.BookRideRecord;
 import com.cabbookingsystem.record.ChangePaymentTypeAndModeRecord;
 import com.cabbookingsystem.record.CompleteRideRecord;
+import com.cabbookingsystem.record.MakePaymentRecord;
 import com.cabbookingsystem.record.RatingFeedbackRecord;
 import com.cabbookingsystem.repository.DriverAdditionalInfoRepository;
 import com.cabbookingsystem.repository.DriverReceivedRidesRepository;
+import com.cabbookingsystem.repository.RatingAndFeedBackRepository;
 import com.cabbookingsystem.repository.RideRepository;
 import com.cabbookingsystem.repository.RideStatusRepository;
 import com.cabbookingsystem.repository.UserCreditsRepository;
@@ -57,6 +60,9 @@ public class RideServiceImplementation implements RideService {
 
 	@Autowired
 	private RideStatusRepository rideStatusRepository;
+
+	@Autowired
+	private RatingAndFeedBackRepository ratingAndFeedBackRepository;
 
 	@Override
 	public ServiceResponse<Ride> bookRide(BookRideRecord bookRideRecord) {
@@ -770,8 +776,8 @@ public class RideServiceImplementation implements RideService {
 	}
 
 	@Override
-	public ServiceResponse<Ride> makePaymentForRide(Long rideId) {
-		Optional<Ride> rideOptional = rideRepository.findById(rideId);
+	public ServiceResponse<Ride> makePaymentForRide(MakePaymentRecord makePaymentRecord) {
+		Optional<Ride> rideOptional = rideRepository.findById(makePaymentRecord.rideId());
 
 		if (rideOptional.isPresent()) {
 			Ride currentRide = rideOptional.get();
@@ -785,10 +791,15 @@ public class RideServiceImplementation implements RideService {
 
 				User driver = currentRide.getDriver();
 				UserCredits driverCredits = userCreditsRepository.findByUserUserId(driver.getUserId());
+
+				double tip = 0;
+				if (makePaymentRecord.amount() > currentRide.getActualFare()) {
+					tip = makePaymentRecord.amount() - currentRide.getActualFare();
+				}
 				double grossAmount = currentRide.getActualFare() * (40 / 100);
 				double commission = grossAmount * (8 / 100);
 				double finalPrice = grossAmount - commission;
-				double driverTotalBalance = driverCredits.getCurrentBalance() + finalPrice;
+				double driverTotalBalance = driverCredits.getCurrentBalance() + finalPrice + tip;
 				if (driverTotalBalance >= driverCredits.getOverDue()) {
 					driverCredits.setCurrentBalance(driverTotalBalance - driverCredits.getOverDue());
 					driverCredits.setOverDue((double) 0);
@@ -799,7 +810,7 @@ public class RideServiceImplementation implements RideService {
 				}
 				userCreditsRepository.save(driverCredits);
 
-				currentRide.setPaidAmount(currentRide.getActualFare());
+				currentRide.setPaidAmount(makePaymentRecord.amount());
 				currentRide.setStatus("Payment Completed");
 				Ride updatedRide = rideRepository.save(currentRide);
 
@@ -826,49 +837,116 @@ public class RideServiceImplementation implements RideService {
 							+ currentRide.getStatus());
 			return response;
 		}
-		ServiceResponse<Ride> response = new ServiceResponse<>(false, null, "Invalid ride Id: " + rideId);
+		ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+				"Invalid ride Id: " + makePaymentRecord.rideId());
 		return response;
 	}
 
 	@Override
-	public ServiceResponse<Ride> giveRatingFeedback(RatingFeedbackRecord ratingFeedbackRecord) {
+	public ServiceResponse<RatingAndFeedback> giveRatingFeedback(RatingFeedbackRecord ratingFeedbackRecord) {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 		if (authentication != null && authentication.isAuthenticated()) {
 			String username = authentication.getName();
 			Optional<User> userOptional = userRepository.findByEmail(username);
 			User giver = userOptional.get();
-			
+
 			Optional<Ride> rideOptional = rideRepository.findById(ratingFeedbackRecord.rideId());
-			
-			if(rideOptional.isPresent()) {
+
+			if (rideOptional.isPresent()) {
 				Ride currentRide = rideOptional.get();
-				
-				if(giver.getRole().getName().equalsIgnoreCase("Driver")) {
-					if(currentRide.getDriver().getUserId() == giver.getUserId()) {
-						
+
+				if (currentRide.getDriver().getUserId() == giver.getUserId()
+						|| currentRide.getPassenger().getUserId() == giver.getUserId()) {
+					if (currentRide.getStatus().equalsIgnoreCase("Payment Completed")) {
+						RatingAndFeedback updatedRatingAndFeedback = new RatingAndFeedback();
+
+						if (currentRide.getDriver().getUserId() == giver.getUserId()) {
+							User passenger = currentRide.getPassenger();
+
+							RatingAndFeedback ratingAndFeedback = new RatingAndFeedback();
+							ratingAndFeedback.setRating(ratingFeedbackRecord.rating());
+							ratingAndFeedback.setFeedback(ratingFeedbackRecord.feedback());
+							ratingAndFeedback.setRide(currentRide);
+							ratingAndFeedback.setGiver(giver);
+							ratingAndFeedback.setReceiver(passenger);
+
+							updatedRatingAndFeedback = ratingAndFeedBackRepository.save(ratingAndFeedback);
+
+							double passengerAverageRating = ratingAndFeedBackRepository
+									.findAverageRatingByReceiverId(passenger.getUserId());
+							passenger.setAverageRatingAsPassenger(passengerAverageRating);
+							userRepository.save(passenger);
+
+							// Database Triger to save the ride status details to the RideStatus table
+							// simultaneously
+							RideStatus rideStatus = new RideStatus();
+							rideStatus.setRideId(currentRide.getRideId());
+							rideStatus.setStatus("Driver Feedback Received");
+							rideStatus.setStatusUpdateTime(LocalDateTime.now());
+							rideStatus.setSourceName(currentRide.getSourceName());
+							rideStatus.setSourceLatitude(currentRide.getSourceLatitude());
+							rideStatus.setSourceLongitude(currentRide.getSourceLongitude());
+							rideStatus.setDestName(currentRide.getDestinationName());
+							rideStatus.setDestLatitude(currentRide.getDestinationLatitude());
+							rideStatus.setDestLongitude(currentRide.getDestinationLongitude());
+							rideStatusRepository.save(rideStatus);
+						} else {
+							User driver = currentRide.getDriver();
+
+							RatingAndFeedback ratingAndFeedback = new RatingAndFeedback();
+							ratingAndFeedback.setRating(ratingFeedbackRecord.rating());
+							ratingAndFeedback.setFeedback(ratingFeedbackRecord.feedback());
+							ratingAndFeedback.setRide(currentRide);
+							ratingAndFeedback.setGiver(giver);
+							ratingAndFeedback.setReceiver(driver);
+
+							updatedRatingAndFeedback = ratingAndFeedBackRepository.save(ratingAndFeedback);
+
+							double driverAverageRating = ratingAndFeedBackRepository
+									.findAverageRatingByReceiverId(driver.getUserId());
+							DriverAdditionalInfo driverAdditionalInfo = driverAdditionalInfoRepository
+									.findByDriver(driver);
+							driverAdditionalInfo.setAverageRating(driverAverageRating);
+							driverAdditionalInfoRepository.save(driverAdditionalInfo);
+
+							// Database Triger to save the ride status details to the RideStatus table
+							// simultaneously
+							RideStatus rideStatus = new RideStatus();
+							rideStatus.setRideId(currentRide.getRideId());
+							rideStatus.setStatus("Passenger Feedback Received");
+							rideStatus.setStatusUpdateTime(LocalDateTime.now());
+							rideStatus.setSourceName(currentRide.getSourceName());
+							rideStatus.setSourceLatitude(currentRide.getSourceLatitude());
+							rideStatus.setSourceLongitude(currentRide.getSourceLongitude());
+							rideStatus.setDestName(currentRide.getDestinationName());
+							rideStatus.setDestLatitude(currentRide.getDestinationLatitude());
+							rideStatus.setDestLongitude(currentRide.getDestinationLongitude());
+							rideStatusRepository.save(rideStatus);
+						}
+
+						ServiceResponse<RatingAndFeedback> response = new ServiceResponse<>(true,
+								updatedRatingAndFeedback, "Rating and feedback for this ride received successfully.");
+						return response;
 					}
-					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
-							"The giver is a driver but not of this ride.");
+					ServiceResponse<RatingAndFeedback> response = new ServiceResponse<>(false, null,
+							"Rating and feedback for this ride cannot be given, now. The status of the ride is: "
+									+ currentRide.getStatus());
 					return response;
 				}
-				else {
-					if(currentRide.getPassenger().getUserId() == giver.getUserId()) {
-						
-					}
-					ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
-							"The giver is a passenger but not of this ride.");
-					return response;
-				}
+
+				ServiceResponse<RatingAndFeedback> response = new ServiceResponse<>(false, null,
+						"The current user is neither the passenger not the driver for this ride.");
+				return response;
 			}
-			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
-					"Invalid ride id: "+ratingFeedbackRecord.rideId());
+			ServiceResponse<RatingAndFeedback> response = new ServiceResponse<>(false, null,
+					"Invalid ride id: " + ratingFeedbackRecord.rideId());
 			return response;
 		}
 
 		else {
 			// No user is authenticated
-			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+			ServiceResponse<RatingAndFeedback> response = new ServiceResponse<>(false, null,
 					"Currently no user is authenticated. Please, login first!");
 			return response;
 		}

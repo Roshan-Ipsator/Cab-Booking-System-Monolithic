@@ -2,12 +2,14 @@ package com.cabbookingsystem.service;
 
 import java.util.List;
 
+import com.cabbookingsystem.entity.RatingAndFeedback;
 import com.cabbookingsystem.entity.Ride;
 import com.cabbookingsystem.entity.User;
 import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.BookRideRecord;
 import com.cabbookingsystem.record.ChangePaymentTypeAndModeRecord;
 import com.cabbookingsystem.record.CompleteRideRecord;
+import com.cabbookingsystem.record.MakePaymentRecord;
 import com.cabbookingsystem.record.RatingFeedbackRecord;
 
 public interface RideService {
@@ -28,8 +30,8 @@ public interface RideService {
 
 	public ServiceResponse<Ride> cancelRideByPassenger(Long rideId);
 
-	public ServiceResponse<Ride> makePaymentForRide(Long rideId);
+	public ServiceResponse<Ride> makePaymentForRide(MakePaymentRecord makePaymentRecord);
 
-	public ServiceResponse<Ride> giveRatingFeedback(RatingFeedbackRecord ratingFeedbackRecord);
+	public ServiceResponse<RatingAndFeedback> giveRatingFeedback(RatingFeedbackRecord ratingFeedbackRecord);
 
 }

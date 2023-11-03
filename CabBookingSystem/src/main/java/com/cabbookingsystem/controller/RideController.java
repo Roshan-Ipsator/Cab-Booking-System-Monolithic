@@ -15,6 +15,8 @@ import com.cabbookingsystem.record.AddVehicleRecord;
 import com.cabbookingsystem.record.BookRideRecord;
 import com.cabbookingsystem.record.ChangePaymentTypeAndModeRecord;
 import com.cabbookingsystem.record.CompleteRideRecord;
+import com.cabbookingsystem.record.MakePaymentRecord;
+import com.cabbookingsystem.record.RatingFeedbackRecord;
 import com.cabbookingsystem.service.RideService;
 
 import jakarta.validation.Valid;
@@ -36,40 +38,45 @@ public class RideController {
 		return rideService.sendRideRequestToDrivers(rideId).finalResponse();
 	}
 
-	@PutMapping("complete-ride")
+	@PutMapping("/complete-ride")
 	public ResponseEntity<ApiResponse> completeRide(@RequestBody CompleteRideRecord completeRideRecord) {
 		return rideService.completeRide(completeRideRecord).finalResponse();
 	}
 
-	@PutMapping("enroute-ride/{rideId}")
+	@PutMapping("/enroute-ride/{rideId}")
 	public ResponseEntity<ApiResponse> enRouteRide(@PathVariable Long rideId) {
 		return rideService.enRouteRide(rideId).finalResponse();
 	}
 
-	@PutMapping("progress-ride/{rideId}")
+	@PutMapping("/progress-ride/{rideId}")
 	public ResponseEntity<ApiResponse> makeRideStatusInProgress(@PathVariable Long rideId) {
 		return rideService.makeRideStatusInProgress(rideId).finalResponse();
 	}
 
-	@PutMapping("update-ride-payment-info")
+	@PutMapping("/update-ride-payment-info")
 	public ResponseEntity<ApiResponse> changePaymentTypeAndMode(
 			@RequestBody ChangePaymentTypeAndModeRecord changePaymentTypeAndModeRecord) {
 		return rideService.changePaymentTypeAndMode(changePaymentTypeAndModeRecord).finalResponse();
 	}
 
-	@PutMapping("cancel-ride-by-driver/{rideId}")
+	@PutMapping("/cancel-ride-by-driver/{rideId}")
 	public ResponseEntity<ApiResponse> cancelRideByDriver(@PathVariable Long rideId) {
 		return rideService.cancelRideByDriver(rideId).finalResponse();
 	}
 
-	@PutMapping("cancel-ride-by-passenger/{rideId}")
+	@PutMapping("/cancel-ride-by-passenger/{rideId}")
 	public ResponseEntity<ApiResponse> cancelRideByPassenger(@PathVariable Long rideId) {
 		return rideService.cancelRideByPassenger(rideId).finalResponse();
 	}
 
-	@PutMapping("make-payment-for-ride/{rideId}")
-	public ResponseEntity<ApiResponse> makePaymentForRide(@PathVariable Long rideId) {
-		return rideService.makePaymentForRide(rideId).finalResponse();
+	@PutMapping("/make-payment-for-ride")
+	public ResponseEntity<ApiResponse> makePaymentForRide(@RequestBody MakePaymentRecord makePaymentRecord) {
+		return rideService.makePaymentForRide(makePaymentRecord).finalResponse();
+	}
+
+	@PutMapping("/give-rating-feedback")
+	public ResponseEntity<ApiResponse> giveRatingFeedback(@RequestBody RatingFeedbackRecord ratingFeedbackRecord) {
+		return rideService.giveRatingFeedback(ratingFeedbackRecord).finalResponse();
 	}
 
 }
