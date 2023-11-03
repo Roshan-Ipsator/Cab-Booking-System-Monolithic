@@ -1,6 +1,5 @@
 package com.cabbookingsystem.service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import com.cabbookingsystem.entity.DriverAdditionalInfo;
@@ -10,6 +9,7 @@ import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.AssignVehicleToDriverRecord;
 import com.cabbookingsystem.record.AssignVehicleToDriverResponse;
 import com.cabbookingsystem.record.ChangeDestinationRecord;
+import com.cabbookingsystem.record.GiveTipRecord;
 import com.cabbookingsystem.record.LoginUserRecord;
 import com.cabbookingsystem.record.SetProfileDetailsRecord;
 import com.cabbookingsystem.record.VehicleTypeFareRecord;
@@ -100,5 +100,7 @@ public interface UserService {
 	public ServiceResponse<Ride> rejectRideRequest(Long rideId);
 
 	public ServiceResponse<DriverAdditionalInfo> changeStatusToUnavailable();
+
+	public ServiceResponse<String> giveTipToDriver(GiveTipRecord giveTipRecord);
 
 }

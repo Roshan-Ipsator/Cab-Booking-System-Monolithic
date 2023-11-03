@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cabbookingsystem.payload.ApiResponse;
 import com.cabbookingsystem.record.AssignVehicleToDriverRecord;
 import com.cabbookingsystem.record.ChangeDestinationRecord;
+import com.cabbookingsystem.record.GiveTipRecord;
 import com.cabbookingsystem.service.UserService;
 
 import jakarta.validation.Valid;
@@ -84,6 +85,11 @@ public class UserController {
 	@PutMapping("change-status-unavailable")
 	public ResponseEntity<ApiResponse> changeStatusToUnavailable() {
 		return userService.changeStatusToUnavailable().finalResponse();
+	}
+
+	@PutMapping("give-tip-to-driver")
+	public ResponseEntity<ApiResponse> giveTipToDriver(@RequestBody GiveTipRecord giveTipRecord) {
+		return userService.giveTipToDriver(giveTipRecord).finalResponse();
 	}
 
 }

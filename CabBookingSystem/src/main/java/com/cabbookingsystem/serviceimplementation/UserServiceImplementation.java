@@ -1,5 +1,6 @@
 package com.cabbookingsystem.serviceimplementation;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import com.cabbookingsystem.payload.ServiceResponse;
 import com.cabbookingsystem.record.AssignVehicleToDriverRecord;
 import com.cabbookingsystem.record.AssignVehicleToDriverResponse;
 import com.cabbookingsystem.record.ChangeDestinationRecord;
+import com.cabbookingsystem.record.GiveTipRecord;
 import com.cabbookingsystem.record.LoginUserRecord;
 import com.cabbookingsystem.record.SetProfileDetailsRecord;
 import com.cabbookingsystem.record.VehicleTypeFareRecord;
@@ -1063,6 +1065,72 @@ public class UserServiceImplementation implements UserService {
 		}
 		// No user is authenticated
 		ServiceResponse<DriverAdditionalInfo> response = new ServiceResponse<>(false, null,
+				"Currently no user is authenticated. Please, login first!");
+		return response;
+	}
+
+	@Override
+	public ServiceResponse<String> giveTipToDriver(GiveTipRecord giveTipRecord) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+
+			Optional<Ride> rideOptional = rideRepository.findById(giveTipRecord.rideId());
+
+			if (rideOptional.isPresent()) {
+				Ride currentRide = rideOptional.get();
+
+				if (currentRide.getPassenger().getUserId() == currentLoggedInUser.getUserId()) {
+
+					LocalDateTime rideCompleteTime = rideStatusRepository
+							.findCompletedStatusTimeByRideId(giveTipRecord.rideId());
+
+					Duration duration = Duration.between(rideCompleteTime, LocalDateTime.now());
+
+					long days = duration.toDays();
+
+					if (days <= 30) {
+						User driver = currentRide.getDriver();
+
+						UserCredits driverCredits = userCreditsRepository.findByUserUserId(driver.getUserId());
+
+						double currentBalance = driverCredits.getCurrentBalance();
+
+						double driverTotalBalance = currentBalance + currentBalance + giveTipRecord.amount();
+
+						if (driverTotalBalance >= driverCredits.getOverDue()) {
+							driverCredits.setCurrentBalance(driverTotalBalance - driverCredits.getOverDue());
+							driverCredits.setOverDue((double) 0);
+						} else {
+							double driverFinalOverDue = driverCredits.getOverDue() - driverTotalBalance;
+							driverCredits.setCurrentBalance((double) 0);
+							driverCredits.setOverDue(driverFinalOverDue);
+						}
+						userCreditsRepository.save(driverCredits);
+
+						ServiceResponse<String> response = new ServiceResponse<>(true,
+								"Tip added to the driver's credits.", "Tip added successfully.");
+						return response;
+
+					}
+					ServiceResponse<String> response = new ServiceResponse<>(false, null,
+							"Cannot give tip after 30 days of the ride completion.");
+					return response;
+				}
+
+				ServiceResponse<String> response = new ServiceResponse<>(false, null,
+						"The current user is not the passenger of the ride.");
+				return response;
+			}
+			ServiceResponse<String> response = new ServiceResponse<>(false, null,
+					"Invalid ride id: " + giveTipRecord.rideId());
+			return response;
+		}
+		// No user is authenticated
+		ServiceResponse<String> response = new ServiceResponse<>(false, null,
 				"Currently no user is authenticated. Please, login first!");
 		return response;
 	}
