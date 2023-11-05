@@ -71,6 +71,9 @@ public class UserServiceImplementation implements UserService {
 	private LoginEmailServiceImplementation loginEmailServiceImplementation;
 
 	@Autowired
+	private RideOtpToEmailServiceImplementation rideOptToEmailServiceImplementation;
+
+	@Autowired
 	private UserDetailsService userDetailsService;
 
 	@Autowired
@@ -105,6 +108,9 @@ public class UserServiceImplementation implements UserService {
 
 	@Autowired
 	private VehicleTypeRepository vehicleTypeRepository;
+
+	@Autowired
+	private TwilioOTPServiceImplementation otpServiceImplementation;
 
 	/**
 	 * 
@@ -147,7 +153,7 @@ public class UserServiceImplementation implements UserService {
 					// sending email for login
 					loginEmailServiceImplementation.sendEmailWithUrl(loginUserRecord.email(),
 							"Check out this URL to verify",
-							"http://localhost:8976/open/user/final-login?loginKey=" + loginKey);
+							"http://localhost:7550/open/user/final-login?loginKey=" + loginKey);
 
 					ServiceResponse<String> response = new ServiceResponse<>(true,
 							"Email sent with login verification link to the email id: " + loginUserRecord.email()
@@ -181,7 +187,7 @@ public class UserServiceImplementation implements UserService {
 						// sending email for login
 						loginEmailServiceImplementation.sendEmailWithUrl(loginUserRecord.email(),
 								"Check out this URL to verify",
-								"http://localhost:8976/open/user/final-login?loginKey=" + loginKey);
+								"http://localhost:7550/open/user/final-login?loginKey=" + loginKey);
 
 						ServiceResponse<String> response = new ServiceResponse<>(
 								true, "Email sent with login verification link to the email id: "
@@ -209,7 +215,7 @@ public class UserServiceImplementation implements UserService {
 
 		// sending email for login
 		loginEmailServiceImplementation.sendEmailWithUrl(loginUserRecord.email(), "Check out this URL to verify",
-				"http://localhost:8976/open/user/final-login?loginKey=" + logInKey);
+				"http://localhost:7550/open/user/final-login?loginKey=" + logInKey);
 
 		ServiceResponse<String> response = new ServiceResponse<>(true,
 				"Email sent with login verification link to the email id: " + loginUserRecord.email()
@@ -665,7 +671,8 @@ public class UserServiceImplementation implements UserService {
 
 	@Override
 	@Transactional(isolation = Isolation.SERIALIZABLE)
-	public ServiceResponse<Ride> acceptRideRequest(Long rideId) {
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	public ServiceResponse<Ride> acceptRideRequest(Long rideId) throws MessagingException {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 		if (authentication != null && authentication.isAuthenticated()) {
@@ -697,6 +704,11 @@ public class UserServiceImplementation implements UserService {
 							associatedRide.setRideOtp(otp);
 
 							associatedRide.setStatus("Accepted");
+
+							otpServiceImplementation.sendSMS("+91" + associatedRide.getPassenger().getPhone(), otp);
+
+							rideOptToEmailServiceImplementation.sendEmailWithOtp(
+									associatedRide.getPassenger().getEmail(), "Ride Accepted - OTP", otp);
 
 							Ride updatedRide = rideRepository.save(associatedRide);
 
@@ -1131,6 +1143,33 @@ public class UserServiceImplementation implements UserService {
 		}
 		// No user is authenticated
 		ServiceResponse<String> response = new ServiceResponse<>(false, null,
+				"Currently no user is authenticated. Please, login first!");
+		return response;
+	}
+
+	@Override
+	public ServiceResponse<List<Ride>> getBookingHistory(Long userId) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+
+			Optional<User> userOptional = userRepository.findById(userId);
+
+			if (userOptional.isPresent()) {
+				User user = userOptional.get();
+
+				List<Ride> rides = user.getBookingHistory();
+
+				ServiceResponse<List<Ride>> response = new ServiceResponse<>(true, rides, "List fetched successfully.");
+				return response;
+
+			}
+			ServiceResponse<List<Ride>> response = new ServiceResponse<>(false, null, "Invalid user id: " + userId);
+			return response;
+		}
+		// No user is authenticated
+		ServiceResponse<List<Ride>> response = new ServiceResponse<>(false, null,
 				"Currently no user is authenticated. Please, login first!");
 		return response;
 	}

@@ -19,6 +19,7 @@ import com.cabbookingsystem.record.ChangeDestinationRecord;
 import com.cabbookingsystem.record.GiveTipRecord;
 import com.cabbookingsystem.service.UserService;
 
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 
 @RestController
@@ -56,7 +57,7 @@ public class UserController {
 	}
 
 	@PutMapping("driver-accept-ride/{rideId}")
-	public ResponseEntity<ApiResponse> acceptRide(@PathVariable Long rideId) {
+	public ResponseEntity<ApiResponse> acceptRide(@PathVariable Long rideId) throws MessagingException {
 		return userService.acceptRideRequest(rideId).finalResponse();
 	}
 
@@ -90,6 +91,11 @@ public class UserController {
 	@PutMapping("give-tip-to-driver")
 	public ResponseEntity<ApiResponse> giveTipToDriver(@RequestBody GiveTipRecord giveTipRecord) {
 		return userService.giveTipToDriver(giveTipRecord).finalResponse();
+	}
+
+	@GetMapping("/get-all-bookings/{userId}")
+	public ResponseEntity<ApiResponse> getBookingHistory(@PathVariable Long userId) {
+		return userService.getBookingHistory(userId).finalResponse();
 	}
 
 }

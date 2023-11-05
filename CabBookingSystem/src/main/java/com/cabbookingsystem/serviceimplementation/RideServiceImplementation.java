@@ -177,7 +177,7 @@ public class RideServiceImplementation implements RideService {
 			if (driverReceivedRides.isEmpty()) {
 				List<DriverAdditionalInfo> driverAdditionalInfos = driverAdditionalInfoRepository
 						.findTopDriversInfoWithinRadius(existingRide.getSourceLongitude(),
-								existingRide.getSourceLatitude(), 16000000,
+								existingRide.getSourceLatitude(), 25000000,
 								existingRide.getVehicleType().getTypeName());
 
 				if (driverAdditionalInfos.size() != 0) {

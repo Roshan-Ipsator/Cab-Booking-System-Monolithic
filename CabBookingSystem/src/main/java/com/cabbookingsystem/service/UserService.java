@@ -88,7 +88,7 @@ public interface UserService {
 
 	public ServiceResponse<DriverAdditionalInfo> setDriverStatusToAvailable(String currentLocation);
 
-	public ServiceResponse<Ride> acceptRideRequest(Long rideId);
+	public ServiceResponse<Ride> acceptRideRequest(Long rideId) throws MessagingException;
 
 	public ServiceResponse<Ride> pickUpPassenger(Long rideId, String otp);
 
@@ -102,5 +102,7 @@ public interface UserService {
 	public ServiceResponse<DriverAdditionalInfo> changeStatusToUnavailable();
 
 	public ServiceResponse<String> giveTipToDriver(GiveTipRecord giveTipRecord);
+
+	public ServiceResponse<List<Ride>> getBookingHistory(Long userId);
 
 }
