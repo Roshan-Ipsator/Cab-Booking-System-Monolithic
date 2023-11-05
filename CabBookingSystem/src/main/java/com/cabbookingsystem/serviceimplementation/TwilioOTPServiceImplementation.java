@@ -17,7 +17,22 @@ public class TwilioOTPServiceImplementation {
 	@Autowired
 	private TwilioConfig twilioConfig;
 
-	public OtpResponseRecord sendSMS(String phoneNumber, String otp) {
+	public OtpResponseRecord sendSMSToVerifyPhoneOtp(String phoneNumber, String otp) {
+		OtpResponseRecord otpResponseRecord = null;
+		try {
+			PhoneNumber to = new PhoneNumber(phoneNumber);// to
+			PhoneNumber from = new PhoneNumber(twilioConfig.getPhoneNumber()); // from
+			String otpMessage = "Dear user , Your OTP is  " + otp + " for verifying your phone number. Thank You.";
+			Message message = Message.creator(to, from, otpMessage).create();
+			otpResponseRecord = new OtpResponseRecord(OtpStatus.DELIVERED, otpMessage);
+		} catch (Exception e) {
+			e.printStackTrace();
+			otpResponseRecord = new OtpResponseRecord(OtpStatus.FAILED, e.getMessage());
+		}
+		return otpResponseRecord;
+	}
+
+	public OtpResponseRecord sendSMSToVerifyRideOtp(String phoneNumber, String otp) {
 		OtpResponseRecord otpResponseRecord = null;
 		try {
 			PhoneNumber to = new PhoneNumber(phoneNumber);// to

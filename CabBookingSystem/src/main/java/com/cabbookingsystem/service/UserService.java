@@ -105,4 +105,8 @@ public interface UserService {
 
 	public ServiceResponse<List<Ride>> getBookingHistory(Long userId);
 
+	public ServiceResponse<String> sendOtpToSetPhone(String phone);
+
+	public ServiceResponse<User> setPhone(String otp);
+
 }

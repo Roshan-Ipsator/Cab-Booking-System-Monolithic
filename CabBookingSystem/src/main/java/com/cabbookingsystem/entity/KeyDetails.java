@@ -32,8 +32,11 @@ public class KeyDetails {
 	private Integer consecutiveAttemptCount;
 	private LocalDateTime trackingStartTime;
 
-	public KeyDetails(String email, String logInKey, LocalDateTime keyGenerationTime,
-			Integer consecutiveAttemptCount, LocalDateTime trackingStartTime) {
+	private String phoneNo;
+	private String otp;
+
+	public KeyDetails(String email, String logInKey, LocalDateTime keyGenerationTime, Integer consecutiveAttemptCount,
+			LocalDateTime trackingStartTime) {
 		super();
 		this.email = email;
 		this.logInKey = logInKey;

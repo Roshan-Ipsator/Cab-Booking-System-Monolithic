@@ -705,7 +705,8 @@ public class UserServiceImplementation implements UserService {
 
 							associatedRide.setStatus("Accepted");
 
-							otpServiceImplementation.sendSMS("+91" + associatedRide.getPassenger().getPhone(), otp);
+							otpServiceImplementation
+									.sendSMSToVerifyRideOtp("+91" + associatedRide.getPassenger().getPhone(), otp);
 
 							rideOptToEmailServiceImplementation.sendEmailWithOtp(
 									associatedRide.getPassenger().getEmail(), "Ride Accepted - OTP", otp);
@@ -1170,6 +1171,73 @@ public class UserServiceImplementation implements UserService {
 		}
 		// No user is authenticated
 		ServiceResponse<List<Ride>> response = new ServiceResponse<>(false, null,
+				"Currently no user is authenticated. Please, login first!");
+		return response;
+	}
+
+	@Override
+	public ServiceResponse<String> sendOtpToSetPhone(String phone) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+
+			Optional<KeyDetails> keyDetailsOptional = keyDetailsRepository.findByEmail(username);
+			KeyDetails keyDetails = keyDetailsOptional.get();
+
+			String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
+
+			keyDetails.setPhoneNo(phone);
+			keyDetails.setOtp(otp);
+
+			otpServiceImplementation.sendSMSToVerifyPhoneOtp("+91" + phone, otp);
+
+			ServiceResponse<String> response = new ServiceResponse<>(true,
+					"OTP sent to your phone number. Please, use that to confirm your phone number!",
+					"OTP sent successfully!");
+			return response;
+
+		}
+		// No user is authenticated
+		ServiceResponse<String> response = new ServiceResponse<>(false, null,
+				"Currently no user is authenticated. Please, login first!");
+		return response;
+	}
+
+	@Override
+	public ServiceResponse<User> setPhone(String otp) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication != null && authentication.isAuthenticated()) {
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
+
+			KeyDetails keyDetails = keyDetailsRepository.findByOtp(otp);
+
+			if (keyDetails != null) {
+				if (keyDetails.getEmail().equals(username)) {
+					User user = userRepository.findByEmail(username).get();
+					user.setPhone(keyDetails.getPhoneNo());
+
+					User updatedUser = userRepository.save(user);
+
+					ServiceResponse<User> response = new ServiceResponse<>(true, updatedUser,
+							"The phone number is set successfully for the current user.");
+					return response;
+
+				}
+				ServiceResponse<User> response = new ServiceResponse<>(false, null,
+						"The OTP is not of the current logged in user. Please, try again with a valid one!");
+				return response;
+			}
+			ServiceResponse<User> response = new ServiceResponse<>(false, null,
+					"No key details found using otp: " + otp);
+			return response;
+		}
+		// No user is authenticated
+		ServiceResponse<User> response = new ServiceResponse<>(false, null,
 				"Currently no user is authenticated. Please, login first!");
 		return response;
 	}

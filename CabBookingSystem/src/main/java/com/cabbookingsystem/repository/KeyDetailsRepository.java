@@ -29,4 +29,6 @@ public interface KeyDetailsRepository extends JpaRepository<KeyDetails, Long> {
 	 */
 	Optional<KeyDetails> findByEmail(String email);
 
+	KeyDetails findByOtp(String otp);
+
 }
