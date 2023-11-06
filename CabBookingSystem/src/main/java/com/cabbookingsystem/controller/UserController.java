@@ -99,9 +99,14 @@ public class UserController {
 		return userService.getBookingHistory(userId).finalResponse();
 	}
 
-	@PostMapping
+	@GetMapping("/otp-set-phone/{phone}")
 	public ResponseEntity<ApiResponse> sendOtpToSetPhone(@PathVariable String phone) {
 		return userService.sendOtpToSetPhone(phone).finalResponse();
+	}
+
+	@PutMapping("/set-phone/{otp}")
+	public ResponseEntity<ApiResponse> setPhone(@PathVariable String otp) {
+		return userService.setPhone(otp).finalResponse();
 	}
 
 }

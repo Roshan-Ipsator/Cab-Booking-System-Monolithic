@@ -366,52 +366,29 @@ public class UserServiceImplementation implements UserService {
 
 		if (authentication != null && authentication.isAuthenticated()) {
 			// The current user is authenticated
-			UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-			String username = userDetails.getUsername();
+			String username = authentication.getName();
+			Optional<User> userOptional = userRepository.findByEmail(username);
+			User currentLoggedInUser = userOptional.get();
 
-			Optional<User> existingUserOptionalEmail = userRepository.findByEmail(setProfileDetailsRecord.email());
+			if (currentLoggedInUser.getPhone() != null) {
+				currentLoggedInUser.setFirstName(setProfileDetailsRecord.firstName());
+				currentLoggedInUser.setLastName(setProfileDetailsRecord.lastName());
+				currentLoggedInUser.setGender(setProfileDetailsRecord.gender());
 
-			if (existingUserOptionalEmail.isPresent()) {
-				Optional<User> existingUserOptionalPhone = userRepository.findByPhone(setProfileDetailsRecord.phone());
+				currentLoggedInUser.setUserUpdationTime(LocalDateTime.now());
 
-				if (existingUserOptionalPhone.isEmpty()
-						|| existingUserOptionalPhone.get().getEmail().equals(setProfileDetailsRecord.email())) {
-					User existingUser = existingUserOptionalEmail.get();
-					if (((existingUser.getRole().getName().equals(RoleEnum.USER_ALL_ACCESS.name())
-							|| existingUser.getRole().getName().equals(RoleEnum.USER_DEFAULT_ACCESS.name())
-							|| existingUser.getRole().getName().equals(RoleEnum.DRIVER.name()))
-							&& existingUser.getEmail().equals(username))
-							|| (existingUser.getRole().getName().equals(RoleEnum.ADMIN_ALL_ACCESS.name())
-									|| existingUser.getRole().getName().equals(RoleEnum.ADMIN_DEFAULT_ACCESS.name()))) {
-						existingUser.setFirstName(setProfileDetailsRecord.firstName());
-						existingUser.setLastName(setProfileDetailsRecord.lastName());
-						existingUser.setGender(setProfileDetailsRecord.gender());
-						existingUser.setPhone(setProfileDetailsRecord.phone());
+				User updatedUser = userRepository.save(currentLoggedInUser);
 
-						existingUser.setUserUpdationTime(LocalDateTime.now());
-
-						User updatedUser = userRepository.save(existingUser);
-
-						ServiceResponse<User> response = new ServiceResponse<>(true, updatedUser,
-								"Current authenticated user successfully updated.");
-
-						return response;
-					}
-					ServiceResponse<User> response = new ServiceResponse<>(false, null,
-							"Only admins with all and update access and the owner of the provided email id with all and update access can update user details.");
-
-					return response;
-				}
-				ServiceResponse<User> response = new ServiceResponse<>(false, null,
-						"The provided phone number already exists: " + setProfileDetailsRecord.phone()
-								+ " with another user. Please, try again with a different phone number!");
+				ServiceResponse<User> response = new ServiceResponse<>(true, updatedUser,
+						"Current authenticated user successfully updated.");
 
 				return response;
 			}
-			ServiceResponse<User> response = new ServiceResponse<>(false, null,
-					"No user found with this email id: " + setProfileDetailsRecord.email());
 
+			ServiceResponse<User> response = new ServiceResponse<>(false, null,
+					"Verify and set your phone number, first before setting other profile details.");
 			return response;
+
 		} else {
 			// No user is authenticated
 			ServiceResponse<User> response = new ServiceResponse<>(false, null,
@@ -1184,19 +1161,29 @@ public class UserServiceImplementation implements UserService {
 			Optional<User> userOptional = userRepository.findByEmail(username);
 			User currentLoggedInUser = userOptional.get();
 
-			Optional<KeyDetails> keyDetailsOptional = keyDetailsRepository.findByEmail(username);
-			KeyDetails keyDetails = keyDetailsOptional.get();
+			Optional<User> userOptionalPhone = userRepository.findByPhone(phone);
 
-			String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
+			if (userOptionalPhone.isEmpty() || userOptionalPhone.get().getUserId() == currentLoggedInUser.getUserId()) {
+				Optional<KeyDetails> keyDetailsOptional = keyDetailsRepository.findByEmail(username);
+				KeyDetails keyDetails = keyDetailsOptional.get();
 
-			keyDetails.setPhoneNo(phone);
-			keyDetails.setOtp(otp);
+				String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
 
-			otpServiceImplementation.sendSMSToVerifyPhoneOtp("+91" + phone, otp);
+				keyDetails.setPhoneNo(phone);
+				keyDetails.setOtp(otp);
 
-			ServiceResponse<String> response = new ServiceResponse<>(true,
-					"OTP sent to your phone number. Please, use that to confirm your phone number!",
-					"OTP sent successfully!");
+				keyDetailsRepository.save(keyDetails);
+
+				otpServiceImplementation.sendSMSToVerifyPhoneOtp("+91" + phone, otp);
+
+				ServiceResponse<String> response = new ServiceResponse<>(true,
+						"OTP sent to your phone number. Please, use that to confirm your phone number!",
+						"OTP sent successfully!");
+				return response;
+			}
+
+			ServiceResponse<String> response = new ServiceResponse<>(false, null,
+					"Provided phone number already exists with another user.");
 			return response;
 
 		}
@@ -1241,22 +1228,4 @@ public class UserServiceImplementation implements UserService {
 				"Currently no user is authenticated. Please, login first!");
 		return response;
 	}
-
-//	@Override
-//	public ServiceResponse<User> setPhoneNumber(String phone) {
-//		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//
-//		if (authentication != null && authentication.isAuthenticated()) {
-//			String username = authentication.getName();
-//			Optional<User> userOptional = userRepository.findByEmail(username);
-//			User currentLoggedInUser = userOptional.get();
-//			
-//			
-//		} else {
-//			// No user is authenticated
-//			ServiceResponse<User> response = new ServiceResponse<>(false, null,
-//					"Currently no user is authenticated. Please, login first!");
-//			return response;
-//		}
-//	}
 }

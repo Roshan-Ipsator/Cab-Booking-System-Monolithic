@@ -74,88 +74,96 @@ public class RideServiceImplementation implements RideService {
 			Optional<User> userOptional = userRepository.findByEmail(username);
 			User currentLoggedInUser = userOptional.get();
 
-			Optional<VehicleType> vehicleTypeOptional = vehicleTypeRepository
-					.findByTypeName(bookRideRecord.vehicleType().toLowerCase());
+			if (currentLoggedInUser.getPhone() != null) {
+				Optional<VehicleType> vehicleTypeOptional = vehicleTypeRepository
+						.findByTypeName(bookRideRecord.vehicleType().toLowerCase());
 
-			if (vehicleTypeOptional.isPresent()) {
-				VehicleType selectedVehicleType = vehicleTypeOptional.get();
+				if (vehicleTypeOptional.isPresent()) {
+					VehicleType selectedVehicleType = vehicleTypeOptional.get();
 
-				double[] startLocationValues = LocationUtils.generateLocationCoordinates();
-				Double startLocationLatitude = startLocationValues[0];
-				Double startLocationLongitude = startLocationValues[1];
+					double[] startLocationValues = LocationUtils.generateLocationCoordinates();
+					Double startLocationLatitude = startLocationValues[0];
+					Double startLocationLongitude = startLocationValues[1];
 
-				double[] endLocationValues = LocationUtils.generateLocationCoordinates();
-				Double endLocationLatitude = endLocationValues[0];
-				Double endLocationLongitude = endLocationValues[1];
+					double[] endLocationValues = LocationUtils.generateLocationCoordinates();
+					Double endLocationLatitude = endLocationValues[0];
+					Double endLocationLongitude = endLocationValues[1];
 
-				Double distance = LocationUtils.calculateDistance(startLocationLatitude, startLocationLongitude,
-						endLocationLatitude, endLocationLongitude);
+					Double distance = LocationUtils.calculateDistance(startLocationLatitude, startLocationLongitude,
+							endLocationLatitude, endLocationLongitude);
 
-				Double estimatedFarePrice = distance * selectedVehicleType.getPricePerKm();
+					Double estimatedFarePrice = distance * selectedVehicleType.getPricePerKm();
 
-				// Check the user's payment type
-				if (bookRideRecord.paymentType().equalsIgnoreCase("Prepaid")) {
+					// Check the user's payment type
+					if (bookRideRecord.paymentType().equalsIgnoreCase("Prepaid")) {
 
-					if (!bookRideRecord.paymentMode().equalsIgnoreCase("Credits")) {
-						ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
-								"For Prepaid payment type, the payment mode must be Credits.");
-						return response;
+						if (!bookRideRecord.paymentMode().equalsIgnoreCase("Credits")) {
+							ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+									"For Prepaid payment type, the payment mode must be Credits.");
+							return response;
+						}
+
+						// Check the user's credit amount
+						UserCredits userCredits = userCreditsRepository
+								.findByUserUserId(currentLoggedInUser.getUserId());
+						if (userCredits.getCurrentBalance() < estimatedFarePrice) {
+							ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
+									"Insufficient balance in the user's credit account. Please, add atleast an amount of "
+											+ (estimatedFarePrice - userCredits.getCurrentBalance())
+											+ " or choose Postpaid payment type!");
+							return response;
+						}
 					}
 
-					// Check the user's credit amount
-					UserCredits userCredits = userCreditsRepository.findByUserUserId(currentLoggedInUser.getUserId());
-					if (userCredits.getCurrentBalance() < estimatedFarePrice) {
-						ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
-								"Insufficient balance in the user's credit account. Please, add atleast an amount of "
-										+ (estimatedFarePrice - userCredits.getCurrentBalance())
-										+ " or choose Postpaid payment type!");
-						return response;
-					}
+					Ride newRide = new Ride();
+					newRide.setSourceName(bookRideRecord.sourceName());
+					newRide.setSourceLatitude(startLocationLatitude);
+					newRide.setSourceLongitude(startLocationLongitude);
+					newRide.setDestinationName(bookRideRecord.destinationName());
+					newRide.setDestinationLatitude(endLocationLatitude);
+					newRide.setDestinationLongitude(endLocationLongitude);
+					newRide.setEstimatedFare(estimatedFarePrice);
+					newRide.setPaymentType(bookRideRecord.paymentType());
+					newRide.setPaymentType(bookRideRecord.paymentMode());
+					newRide.setStatus("Booked");
+
+					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+					LocalDateTime rideStartTime = LocalDateTime.parse(bookRideRecord.rideStartTime(), formatter);
+
+					newRide.setRideStartTime(rideStartTime);
+
+					newRide.setVehicleType(selectedVehicleType);
+					newRide.setPassenger(currentLoggedInUser);
+
+					Ride bookedRide = rideRepository.save(newRide);
+
+					// Database Triger to save the ride status details to the RideStatus table
+					// simultaneously
+					RideStatus rideStatus = new RideStatus();
+					rideStatus.setRideId(bookedRide.getRideId());
+					rideStatus.setStatus("Booked");
+					rideStatus.setStatusUpdateTime(LocalDateTime.now());
+					rideStatus.setSourceName(bookedRide.getSourceName());
+					rideStatus.setSourceLatitude(startLocationLatitude);
+					rideStatus.setSourceLongitude(startLocationLongitude);
+					rideStatus.setDestName(bookedRide.getDestinationName());
+					rideStatus.setDestLatitude(endLocationLatitude);
+					rideStatus.setDestLongitude(endLocationLongitude);
+					rideStatusRepository.save(rideStatus);
+
+					ServiceResponse<Ride> response = new ServiceResponse<>(true, bookedRide,
+							"Ride booked successfully!");
+					return response;
+
 				}
 
-				Ride newRide = new Ride();
-				newRide.setSourceName(bookRideRecord.sourceName());
-				newRide.setSourceLatitude(startLocationLatitude);
-				newRide.setSourceLongitude(startLocationLongitude);
-				newRide.setDestinationName(bookRideRecord.destinationName());
-				newRide.setDestinationLatitude(endLocationLatitude);
-				newRide.setDestinationLongitude(endLocationLongitude);
-				newRide.setEstimatedFare(estimatedFarePrice);
-				newRide.setPaymentType(bookRideRecord.paymentType());
-				newRide.setPaymentType(bookRideRecord.paymentMode());
-				newRide.setStatus("Booked");
-
-				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-				LocalDateTime rideStartTime = LocalDateTime.parse(bookRideRecord.rideStartTime(), formatter);
-
-				newRide.setRideStartTime(rideStartTime);
-
-				newRide.setVehicleType(selectedVehicleType);
-				newRide.setPassenger(currentLoggedInUser);
-
-				Ride bookedRide = rideRepository.save(newRide);
-
-				// Database Triger to save the ride status details to the RideStatus table
-				// simultaneously
-				RideStatus rideStatus = new RideStatus();
-				rideStatus.setRideId(bookedRide.getRideId());
-				rideStatus.setStatus("Booked");
-				rideStatus.setStatusUpdateTime(LocalDateTime.now());
-				rideStatus.setSourceName(bookedRide.getSourceName());
-				rideStatus.setSourceLatitude(startLocationLatitude);
-				rideStatus.setSourceLongitude(startLocationLongitude);
-				rideStatus.setDestName(bookedRide.getDestinationName());
-				rideStatus.setDestLatitude(endLocationLatitude);
-				rideStatus.setDestLongitude(endLocationLongitude);
-				rideStatusRepository.save(rideStatus);
-
-				ServiceResponse<Ride> response = new ServiceResponse<>(true, bookedRide, "Ride booked successfully!");
+				ServiceResponse<Ride> response = new ServiceResponse<>(false, null, "Invalid vehicle type name: "
+						+ bookRideRecord.vehicleType() + ". Please, try with a valid one!");
 				return response;
-
 			}
 
 			ServiceResponse<Ride> response = new ServiceResponse<>(false, null,
-					"Invalid vehicle type name: " + bookRideRecord.vehicleType() + ". Please, try with a valid one!");
+					"A passenger cannot book a ride before verifying and setting phone number in his profile.");
 			return response;
 
 		} else {
